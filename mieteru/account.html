@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<!-- PATCH-2026-05-21-MIETERU-ACCOUNT -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIミエテル — マイページ</title>
+<style>
+:root { --bg:#0b0b14; --card:#1a1a2a; --text:#e8e8f0; --muted:#9090a8;
+        --primary:#bc42ff; --accent:#14b4e6; --green:#22c55e; --border:#2a2a3a; }
+html,body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",sans-serif; margin:0; padding:0; }
+.wrap { max-width:680px; margin:0 auto; padding:24px 16px 80px; }
+.header { display:flex; align-items:center; gap:10px; padding:12px 4px 24px; }
+.header .logo { width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,var(--primary),var(--accent)); display:grid; place-items:center; font-weight:800; color:#fff; }
+.header .title { font-weight:700; font-size:18px; } .header .sub { color:var(--muted); font-size:12px; }
+h1 { font-size:22px; font-weight:800; margin:6px 0 4px; }
+.subtitle { color:var(--muted); font-size:13px; margin:0 0 18px; }
+.email-line { color:var(--muted); font-size:12px; margin-bottom:18px; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin:12px 0; }
+.page-row { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.page-name { font-size:16px; font-weight:700; margin-bottom:4px; }
+.page-meta { color:var(--muted); font-size:12px; line-height:1.6; }
+.page-meta a { color:var(--accent); text-decoration:none; word-break:break-all; }
+.badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; margin-left:6px; }
+.badge.live { background:rgba(34,197,94,0.18); color:#a6efbe; border:1px solid var(--green); }
+.badge.draft { background:rgba(144,144,168,0.15); color:var(--muted); border:1px solid var(--border); }
+.actions { display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+.btn { padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text); font-size:12px; cursor:pointer; text-decoration:none; text-align:center; white-space:nowrap; }
+.btn-primary { background:linear-gradient(135deg,var(--primary),var(--accent)); border:none; color:#fff; font-weight:600; }
+.cta { display:block; width:100%; padding:14px; border-radius:12px; border:none; cursor:pointer; font-weight:700; font-size:15px; text-align:center; text-decoration:none; box-sizing:border-box; }
+.cta-primary { background:linear-gradient(135deg,var(--primary),var(--accent)); color:#fff; margin-top:18px; }
+.cta-secondary { background:transparent; color:var(--muted); border:1px solid var(--border); margin-top:10px; }
+.empty { color:var(--muted); font-size:14px; text-align:center; padding:30px 0; }
+.error-banner { background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ffb4b4; padding:12px 14px; border-radius:10px; margin-bottom:16px; font-size:14px; }
+.spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:middle; margin-right:6px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">S</div>
+    <div>
+      <div class="title">AIミエテル — マイページ</div>
+      <div class="sub">by SEOAI</div>
+    </div>
+  </div>
+
+  <h1>あなたのページ一覧</h1>
+  <p class="subtitle">作成したAIミエテルページを管理できます。</p>
+  <div class="email-line" id="email-line">…</div>
+
+  <div id="loading" class="card">
+    <div style="text-align:center;color:var(--muted);font-size:14px">
+      <span class="spinner"></span>読み込み中...
+    </div>
+  </div>
+
+  <div id="pages-list"></div>
+
+  <a id="add-page-btn" class="cta cta-primary" href="#">➕ 新しい店舗ページを追加</a>
+  <a class="cta cta-secondary" href="/mieteru">トップに戻る</a>
+</div>
+
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const token = params.get("t") || "";
+  if (!token) { location.href = "/mieteru/login"; return; }
+
+  document.getElementById("add-page-btn").href = "/mieteru/demo?addmode=1&t=" + encodeURIComponent(token);
+
+  fetch("/api/mieteru/pages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: token }),
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      document.getElementById("loading").style.display = "none";
+      if (!data.ok) {
+        if (data.error && /expired|session/i.test(data.error)) {
+          location.href = "/mieteru/login";
+          return;
+        }
+        document.getElementById("pages-list").innerHTML =
+          '<div class="error-banner">' + (data.error || "ページを取得できませんでした。") + '</div>';
+        return;
+      }
+      if (data.email) {
+        document.getElementById("email-line").textContent = "ログイン中: " + data.email;
+      }
+      const list = document.getElementById("pages-list");
+      if (!data.pages || data.pages.length === 0) {
+        list.innerHTML = '<div class="card empty">まだページがありません。下の「新しい店舗ページを追加」から作成してください。</div>';
+        return;
+      }
+      list.innerHTML = data.pages.map(function (p) {
+        const liveBadge = p.is_public
+          ? '<span class="badge live">公開中</span>'
+          : '<span class="badge draft">未公開</span>';
+        const urlBlock = p.public_url
+          ? '<div class="page-meta"><a href="' + p.public_url + '" target="_blank" rel="noopener">' + p.public_url + '</a></div>'
+          : '<div class="page-meta" style="color:var(--muted)">— 未公開 —</div>';
+        const visitBtn = p.public_url
+          ? '<a class="btn btn-primary" href="' + p.public_url + '" target="_blank" rel="noopener">🔗 開く</a>'
+          : '';
+        const editBtn = '<a class="btn" href="/mieteru/edit?t=' + encodeURIComponent(token) +
+          '&c=' + encodeURIComponent(p.client_id) + '">✏ 編集</a>';
+        const meta = [p.industry, p.location].filter(Boolean).join(' · ');
+        return (
+          '<div class="card">' +
+            '<div class="page-row">' +
+              '<div style="min-width:0;flex:1">' +
+                '<div class="page-name">' + (p.name || '(無題)') + liveBadge + '</div>' +
+                (meta ? '<div class="page-meta">' + meta + '</div>' : '') +
+                urlBlock +
+              '</div>' +
+              '<div class="actions">' + visitBtn + editBtn + '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+    })
+    .catch(function () {
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("pages-list").innerHTML =
+        '<div class="error-banner">通信エラーが発生しました。</div>';
+    });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<!-- PATCH-2026-05-22-MIETERU-EDIT -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIミエテル — ページ編集</title>
+<style>
+:root { --bg:#0a0e1f; --bg-soft:#11162e; --bg-card:rgba(255,255,255,0.04);
+        --border:rgba(120,170,255,0.18); --border-hi:rgba(120,170,255,0.45);
+        --primary:#4a8cff; --cyan:#14b4e6; --good:#4ade80; --danger:#ff6b8b;
+        --text:#fff; --text-mute:#a8b1cc; --text-faint:#6b7390;
+        --grad:linear-gradient(135deg,#4a8cff 0%,#14b4e6 100%); }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif; background:var(--bg); color:var(--text); line-height:1.7; }
+a { color:inherit; text-decoration:none; }
+button { font:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+
+header.site { position:sticky; top:0; z-index:100; background:rgba(10,14,31,0.85); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+header .wrap { max-width:680px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
+.logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; }
+.logo small { display:block; font-size:11px; color:var(--text-faint); font-weight:500; line-height:1; }
+header .back { font-size:13px; color:var(--text-mute); }
+
+main { max-width:680px; margin:0 auto; padding:32px 20px 80px; }
+
+.card { background:var(--bg-soft); border:1px solid var(--border-hi); border-radius:20px; padding:24px; margin-bottom:14px; }
+h1 { font-size:22px; font-weight:800; margin-bottom:6px; }
+.sub { color:var(--text-mute); font-size:13px; margin-bottom:20px; }
+
+.field-row { margin-bottom:14px; }
+.field-row label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--text-mute); }
+.input-text { width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:10px; color:#fff; font-size:14px; padding:11px 14px; outline:none; font-family:inherit; }
+.input-text:focus { border-color:var(--border-hi); }
+textarea.input-text { resize:vertical; min-height:90px; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:560px) { .grid-2 { grid-template-columns:1fr; } }
+.helper { font-size:12px; color:var(--text-faint); margin-top:4px; }
+.btn-primary { display:block; width:100%; padding:14px 20px; background:var(--grad); color:#fff; border-radius:12px; font-weight:700; font-size:15px; box-shadow:0 6px 20px rgba(74,140,255,0.35); }
+.btn-primary[disabled] { opacity:0.6; cursor:not-allowed; }
+.btn-ghost { display:inline-block; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; color:var(--text-mute); }
+.success-banner { background:rgba(74,222,128,0.12); border:1px solid var(--good); color:#a6efbe; padding:12px 14px; border-radius:10px; margin-bottom:16px; font-size:14px; display:none; }
+.error-banner { background:rgba(255,107,139,0.12); border:1px solid var(--danger); color:#ffb3c1; padding:10px 14px; border-radius:8px; margin-top:12px; font-size:13px; }
+.spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:middle; margin-right:6px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.loading-dots::after { content:"."; animation:dots 1.4s infinite steps(4,end); }
+@keyframes dots { 0%,20%{content:".";} 40%{content:"..";} 60%,80%{content:"...";} }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <div class="logo">
+      <div>AIミエテル<small>by SEOAI</small></div>
+    </div>
+    <a id="back-link" href="/mieteru/account" class="back">← マイページに戻る</a>
+  </div>
+</header>
+
+<main>
+  <h1>ページを編集</h1>
+  <p class="sub">変更内容は保存と同時に公開ページに反映されます。</p>
+
+  <div id="success-banner" class="success-banner"></div>
+  <div id="loading-card" class="card" style="text-align:center; color:var(--text-mute);">
+    <span class="spinner"></span>読み込み中...
+  </div>
+
+  <form id="edit-form" class="card" style="display:none;" onsubmit="saveEdits(event)">
+    <div class="field-row">
+      <label>ビジネス名</label>
+      <input class="input-text" name="name" required>
+    </div>
+    <div class="grid-2">
+      <div class="field-row">
+        <label>業種</label>
+        <select class="input-text" id="industry_select" onchange="onIndustryChange()">
+          <option value="">選択してください…</option>
+          <option value="歯科・医院">歯科 / 医院</option>
+          <option value="美容室・サロン">美容室 / サロン</option>
+          <option value="レストラン・カフェ">レストラン / カフェ</option>
+          <option value="整体・接骨院">整体 / 接骨院</option>
+          <option value="エステ・ネイル">エステ / ネイル</option>
+          <option value="リフォーム・建設">リフォーム / 建設</option>
+          <option value="不動産・賃貸">不動産 / 賃貸</option>
+          <option value="塾・教育">塾 / 教育</option>
+          <option value="フィットネス・ジム">フィットネス / ジム</option>
+          <option value="税理士・会計士">税理士 / 会計士</option>
+          <option value="弁護士・司法書士">弁護士 / 司法書士</option>
+          <option value="__other__">その他（自由入力）</option>
+        </select>
+        <input class="input-text" name="industry" id="industry_other" placeholder="業種を入力" style="margin-top:8px; display:none;">
+      </div>
+      <div class="field-row">
+        <label>所在地</label>
+        <input class="input-text" name="location" placeholder="例：横浜市中区">
+      </div>
+    </div>
+    <div class="field-row">
+      <label>サービス・商品の概要</label>
+      <p class="helper" style="margin-bottom:6px;">💡 提供サービス・地域・特徴・実績などを具体的に書くと、AIに見つけてもらいやすくなります。</p>
+      <textarea class="input-text" name="summary" id="summary" rows="4" required></textarea>
+      <button type="button" class="btn-ghost" id="ai-summary-btn" onclick="generateSummary()" style="margin-top:8px;">✨ AIで自動生成</button>
+    </div>
+    <div class="field-row">
+      <label>電話番号</label>
+      <input class="input-text" name="phone" placeholder="03-0000-0000">
+    </div>
+
+    <!-- PATCH-2026-05-22-MIETERU-HOURS -->
+    <div class="field-row" id="hours-block">
+      <label>営業時間</label>
+      <div id="hours-picker" style="background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:10px; padding:10px 12px;">
+        <div id="hours-rows"></div>
+        <p class="helper" id="hours-preview" style="margin-top:8px;">— 未設定 —</p>
+      </div>
+      <input type="hidden" name="hours" id="hours-output">
+      <p class="helper" style="margin-top:6px;">
+        <a href="#" id="hours-toggle-freetext" style="color:var(--cyan); text-decoration:underline;">📝 自由入力に切り替える</a>
+      </p>
+      <input class="input-text" id="hours-freetext" placeholder="例：月-金 9:00-18:00 / 土 9:00-13:00 / 日 休業" style="display:none; margin-top:6px;">
+    </div>
+
+    <div class="field-row">
+      <label>キーワード（カンマ区切り）</label>
+      <p class="helper" style="margin-bottom:6px;">💡 お客様がAIに尋ねるときに使いそうな言葉を入れてください。AIがあなたのビジネスを正しい質問と結びつけやすくなります。<br>例：「松戸, 歯科, インプラント」「新宿, ラーメン, 深夜営業」</p>
+      <input class="input-text" name="keywords" placeholder="例：横浜, 歯科, インプラント">
+    </div>
+    <div class="field-row">
+      <label>公式サイトURL</label>
+      <input class="input-text" name="domain" placeholder="https://your-site.com">
+    </div>
+
+    <button id="save-btn" type="submit" class="btn-primary">💾 保存して公開を更新</button>
+    <div id="error-msg"></div>
+    <p class="helper" id="public-url-line" style="margin-top:12px; text-align:center;"></p>
+
+    <hr style="border:none; border-top:1px solid var(--border); margin:24px 0 16px;">
+    <p class="helper" style="margin-bottom:6px;">⚠️ 公開を停止すると、このページは検索やAIから見えなくなります（データは残ります）。</p>
+    <button id="unpublish-btn" type="button" class="btn-ghost" onclick="unpublishPage()" style="width:100%;">🚫 公開を停止する</button>
+  </form>
+</main>
+
+<script>
+// PATCH-2026-05-22-MIETERU-HOURS: weekly hours picker (same as demo).
+const HOURS_DAYS = [
+  {key:"mon", ja:"月"},{key:"tue", ja:"火"},{key:"wed", ja:"水"},
+  {key:"thu", ja:"木"},{key:"fri", ja:"金"},{key:"sat", ja:"土"},{key:"sun", ja:"日"},
+];
+function hoursTimeOptions() {
+  const opts = [];
+  for (let h=0; h<24; h++) for (let m of [0,30]) {
+    const v = String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0");
+    opts.push('<option value="'+v+'">'+v+'</option>');
+  }
+  return opts.join("");
+}
+function buildHoursPicker() {
+  const root = document.getElementById("hours-rows");
+  if (!root) return;
+  const tOpts = hoursTimeOptions();
+  root.innerHTML = HOURS_DAYS.map(d => (
+    '<div class="hours-row" data-day="'+d.key+'" style="display:flex; align-items:center; gap:8px; padding:4px 0; font-size:13px;">' +
+      '<span style="width:22px; font-weight:600;">'+d.ja+'</span>' +
+      '<label style="display:flex; align-items:center; gap:4px; cursor:pointer;">' +
+        '<input type="checkbox" class="hours-open" checked>営業' +
+      '</label>' +
+      '<select class="hours-from input-text" style="padding:4px 8px; flex:0 0 90px; font-size:13px;">'+tOpts+'</select>' +
+      '<span>〜</span>' +
+      '<select class="hours-to input-text" style="padding:4px 8px; flex:0 0 90px; font-size:13px;">'+tOpts+'</select>' +
+    '</div>'
+  )).join("");
+  root.querySelectorAll(".hours-from").forEach(s => s.value = "09:00");
+  root.querySelectorAll(".hours-to").forEach(s => s.value = "18:00");
+  const satTo = root.querySelector('[data-day="sat"] .hours-to'); if (satTo) satTo.value = "13:00";
+  const sunCb = root.querySelector('[data-day="sun"] .hours-open'); if (sunCb) sunCb.checked = false;
+  root.addEventListener("change", updateHoursOutput);
+  updateHoursOutput();
+}
+function updateHoursOutput() {
+  const rows = HOURS_DAYS.map(d => {
+    const r = document.querySelector('#hours-rows .hours-row[data-day="'+d.key+'"]');
+    if (!r) return null;
+    const open = r.querySelector(".hours-open").checked;
+    return { ja: d.ja, sig: open ? (r.querySelector(".hours-from").value+"-"+r.querySelector(".hours-to").value) : "休業" };
+  }).filter(Boolean);
+  const groups = [];
+  let cur = null;
+  for (const r of rows) {
+    if (cur && cur.sig === r.sig) cur.end = r.ja;
+    else { if (cur) groups.push(cur); cur = { start: r.ja, end: r.ja, sig: r.sig }; }
+  }
+  if (cur) groups.push(cur);
+  const out = groups.map(g => (g.start===g.end ? g.start : g.start+"-"+g.end) + " " + g.sig).join(" / ");
+  document.getElementById("hours-output").value = out;
+  const prev = document.getElementById("hours-preview");
+  if (prev) prev.textContent = out || "— 未設定 —";
+}
+function setHoursFromFreeText(text) {
+  const ft = document.getElementById("hours-freetext");
+  if (ft) ft.value = text || "";
+  document.getElementById("hours-output").value = text || "";
+  const prev = document.getElementById("hours-preview");
+  if (prev) prev.textContent = text || "— 未設定 —";
+}
+
+(function () {
+  const params = new URLSearchParams(location.search);
+  const token = params.get("t") || "";
+  const clientId = params.get("c") || "";
+  if (!token || !clientId) { location.href = "/mieteru/login"; return; }
+  document.getElementById("back-link").href = "/mieteru/account?t=" + encodeURIComponent(token);
+  window.TOKEN = token;
+  window.CLIENT_ID = clientId;
+
+  fetch("/api/mieteru/page/get", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: token, client_id: clientId }),
+  })
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById("loading-card").style.display = "none";
+      if (!data.ok) {
+        if (/expired|session/i.test(data.error || "")) { location.href = "/mieteru/login"; return; }
+        alert(data.error || "ページを読み込めませんでした。");
+        return;
+      }
+      const p = data.page;
+      document.getElementById("edit-form").style.display = "block";
+      buildHoursPicker();
+      document.querySelector('input[name="name"]').value = p.name || "";
+      document.querySelector('input[name="location"]').value = p.location || "";
+      document.querySelector('input[name="phone"]').value = p.phone || "";
+      if (p.hours) {
+        document.getElementById("hours-freetext").style.display = "block";
+        document.getElementById("hours-picker").style.display = "none";
+        const tog = document.getElementById("hours-toggle-freetext");
+        if (tog) tog.textContent = "📅 曜日ごとに設定に戻す";
+        setHoursFromFreeText(p.hours);
+      }
+      document.querySelector('input[name="keywords"]').value = p.keywords || "";
+      document.querySelector('input[name="domain"]').value = p.domain || "";
+      document.getElementById("summary").value = p.summary || "";
+      setIndustryFromText(p.industry || "");
+      if (p.public_url) {
+        document.getElementById("public-url-line").innerHTML =
+          '現在の公開URL: <a href="' + p.public_url + '" target="_blank" rel="noopener" style="color:#14b4e6">' +
+          p.public_url + '</a>';
+      }
+      const tog = document.getElementById("hours-toggle-freetext");
+      if (tog) tog.addEventListener("click", function (e) {
+        e.preventDefault();
+        const picker = document.getElementById("hours-picker");
+        const ft = document.getElementById("hours-freetext");
+        if (ft.style.display === "none") {
+          ft.style.display = "block"; picker.style.display = "none";
+          tog.textContent = "📅 曜日ごとに設定に戻す";
+          ft.addEventListener("input", function () { document.getElementById("hours-output").value = ft.value; });
+        } else {
+          ft.style.display = "none"; picker.style.display = "block";
+          tog.textContent = "📝 自由入力に切り替える";
+          updateHoursOutput();
+        }
+      });
+    })
+    .catch(() => {
+      document.getElementById("loading-card").innerHTML =
+        '<div class="error-banner">読み込み中にエラーが発生しました。</div>';
+    });
+})();
+
+function onIndustryChange() {
+  const sel = document.getElementById("industry_select");
+  const other = document.getElementById("industry_other");
+  if (sel.value === "__other__") {
+    other.style.display = "block"; other.value = ""; other.focus();
+  } else {
+    other.style.display = "none"; other.value = sel.value || "";
+  }
+}
+
+function setIndustryFromText(raw) {
+  const sel = document.getElementById("industry_select");
+  const other = document.getElementById("industry_other");
+  const text = (raw || "").trim();
+  if (!text) return;
+  const opts = Array.from(sel.options).filter(o => o.value && o.value !== "__other__");
+  const hit = opts.find(o => o.value === text || o.value.includes(text) || text.includes(o.value));
+  if (hit) { sel.value = hit.value; other.style.display = "none"; other.value = hit.value; }
+  else { sel.value = "__other__"; other.style.display = "block"; other.value = text; }
+}
+
+async function generateSummary() {
+  const btn = document.getElementById("ai-summary-btn");
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-dots">生成中</span>';
+  try {
+    const otherEl = document.getElementById("industry_other");
+    const selEl = document.getElementById("industry_select");
+    const industry = (otherEl.style.display !== "none" ? otherEl.value : selEl.value) || "";
+    const res = await fetch("/api/mieteru/summarize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: document.querySelector('input[name="name"]').value,
+        industry: industry === "__other__" ? "" : industry,
+        location: document.querySelector('input[name="location"]').value,
+        phone: document.querySelector('input[name="phone"]').value,
+        hours: document.getElementById("hours-output").value,
+        url: document.querySelector('input[name="domain"]').value,
+        current: document.getElementById("summary").value,
+      }),
+    });
+    const data = await res.json();
+    if (data.ok && data.summary) {
+      document.getElementById("summary").value = data.summary;
+    } else {
+      alert(data.error || "概要を生成できませんでした。");
+    }
+  } catch (_) {
+    alert("通信エラーが発生しました。");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+}
+
+async function unpublishPage() {
+  if (!confirm("このページの公開を停止しますか？\n\n公開URL（seoai.space/p/...）が見えなくなります。\n後で再び編集して保存すれば再公開できます。")) return;
+  const btn = document.getElementById("unpublish-btn");
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>停止中...';
+  try {
+    const res = await fetch("/api/mieteru/page/unpublish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: window.TOKEN, client_id: window.CLIENT_ID }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const banner = document.getElementById("success-banner");
+      banner.textContent = "🚫 公開を停止しました。再公開するには「保存して公開を更新」を押してください。";
+      banner.style.display = "block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      throw new Error(data.error || "公開を停止できませんでした。");
+    }
+  } catch (err) {
+    alert(err.message || "エラーが発生しました。");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+}
+
+async function saveEdits(e) {
+  e.preventDefault();
+  const btn = document.getElementById("save-btn");
+  const errBox = document.getElementById("error-msg");
+  const banner = document.getElementById("success-banner");
+  errBox.innerHTML = "";
+  banner.style.display = "none";
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>保存中...';
+  try {
+    const otherEl = document.getElementById("industry_other");
+    const selEl = document.getElementById("industry_select");
+    const industry = (otherEl.style.display !== "none" ? otherEl.value : selEl.value) || "";
+    const profile = {
+      name: document.querySelector('input[name="name"]').value,
+      industry: industry === "__other__" ? "" : industry,
+      location: document.querySelector('input[name="location"]').value,
+      summary: document.getElementById("summary").value,
+      phone: document.querySelector('input[name="phone"]').value,
+      hours: document.getElementById("hours-output").value,
+      keywords: document.querySelector('input[name="keywords"]').value,
+      domain: document.querySelector('input[name="domain"]').value,
+    };
+    const res = await fetch("/api/mieteru/page/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: window.TOKEN, client_id: window.CLIENT_ID, profile: profile }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      banner.innerHTML = '✅ 保存しました。公開ページに反映されています。<br>' +
+        (data.public_url ? '<a href="' + data.public_url + '" target="_blank" style="color:#a6efbe">' + data.public_url + '</a>' : '');
+      banner.style.display = "block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      throw new Error(data.error || "保存できませんでした。");
+    }
+  } catch (err) {
+    errBox.innerHTML = '<div class="error-banner">' + (err.message || "エラーが発生しました。") + '</div>';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIミエテルページを作成 — AIミエテル</title>
+<meta name="description" content="URLを入力するだけ。AIがあなたのビジネス情報を自動で読み取って、AIに見えやすい専用ページを作成します。">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg:#0a0e1f; --bg-soft:#11162e; --bg-card:rgba(255,255,255,0.04);
+    --border:rgba(120,170,255,0.18); --border-hi:rgba(120,170,255,0.45);
+    --primary:#4a8cff; --cyan:#14b4e6; --good:#4ade80; --warn:#ffb347; --danger:#ff6b8b;
+    --text:#fff; --text-mute:#a8b1cc; --text-faint:#6b7390;
+    --grad:linear-gradient(135deg,#4a8cff 0%,#14b4e6 100%);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif; background:var(--bg); color:var(--text); line-height:1.7; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; text-decoration:none; }
+  button { font:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+  ul { list-style:none; }
+
+  header.site { position:sticky; top:0; z-index:100; background:rgba(10,14,31,0.85); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+  header .wrap { max-width:1100px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; }
+  .logo-icon { width:34px; height:34px; display:block; flex-shrink:0; }
+  .logo-text small { display:block; font-size:11px; color:var(--text-faint); font-weight:500; line-height:1; }
+  header .back { font-size:13px; color:var(--text-mute); }
+
+  main { max-width:680px; margin:0 auto; padding:40px 20px 80px; }
+
+  /* Stepper */
+  .stepper { display:flex; gap:8px; margin-bottom:32px; justify-content:center; }
+  .step { flex:0 0 auto; display:flex; align-items:center; gap:10px; }
+  .step .dot { width:32px; height:32px; border-radius:50%; background:var(--bg-card); border:1px solid var(--border); display:grid; place-items:center; font-weight:700; font-size:13px; color:var(--text-faint); }
+  .step.active .dot { background:var(--grad); border-color:transparent; color:#fff; }
+  .step.done .dot { background:var(--good); border-color:transparent; color:#0a0e1f; }
+  .step .lb { font-size:12px; color:var(--text-mute); }
+  .step.active .lb { color:var(--text); font-weight:600; }
+  .step .sep { width:24px; height:1px; background:var(--border); margin:0 4px; }
+
+  .card { background:var(--bg-soft); border:1px solid var(--border-hi); border-radius:20px; padding:28px 24px; margin-bottom:18px; }
+  h1 { font-size:24px; line-height:1.4; font-weight:800; margin-bottom:8px; text-align:center; }
+  h1 .accent { background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .sub { text-align:center; color:var(--text-mute); font-size:14px; margin-bottom:24px; }
+  .label { display:block; font-size:13px; font-weight:600; margin-bottom:8px; color:var(--text-mute); }
+
+  .url-input-wrap { display:flex; align-items:center; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:12px; padding:4px 4px 4px 14px; }
+  .url-input-wrap .icon { font-size:16px; color:var(--text-faint); margin-right:8px; }
+  .url-input-wrap input { flex:1; background:transparent; border:none; color:#fff; font-size:15px; padding:12px 4px; outline:none; }
+  .url-input-wrap input::placeholder { color:var(--text-faint); }
+
+  .input-text { width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:10px; color:#fff; font-size:14px; padding:11px 14px; outline:none; font-family:inherit; }
+  .input-text:focus { border-color:var(--border-hi); }
+  textarea.input-text { resize:vertical; min-height:80px; }
+
+  .btn-primary { display:block; width:100%; padding:14px 20px; background:var(--grad); color:#fff; border-radius:12px; font-weight:700; font-size:15px; box-shadow:0 6px 20px rgba(74,140,255,0.35); transition:transform .15s; margin-top:16px; }
+  .btn-primary:hover { transform:translateY(-1px); }
+  .btn-primary:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+  .btn-ghost { display:inline-block; padding:10px 16px; border:1px solid var(--border-hi); border-radius:10px; font-size:13px; font-weight:600; color:var(--text-mute); }
+
+  .field-row { margin-bottom:14px; }
+  .field-row label { display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text-mute); }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:560px) { .grid-2 { grid-template-columns:1fr; } }
+
+  .ai-pill { display:inline-block; font-size:11px; font-weight:600; color:#8db4ff; background:rgba(74,140,255,0.15); border:1px solid rgba(74,140,255,0.35); padding:2px 8px; border-radius:999px; margin-left:6px; }
+
+  .result-summary { background:rgba(74,140,255,0.08); border:1px solid rgba(74,140,255,0.3); border-radius:12px; padding:14px; margin-bottom:18px; font-size:13px; color:var(--text-mute); }
+  .result-summary b { color:var(--text); }
+
+  .err-msg { margin-top:12px; padding:10px 14px; background:rgba(255,107,139,0.1); border:1px solid rgba(255,107,139,0.3); border-radius:8px; color:#ffb3c1; font-size:13px; text-align:center; }
+
+  .loading-dots::after { content:"."; animation:dots 1.4s infinite steps(4,end); }
+  @keyframes dots { 0%,20%{content:".";} 40%{content:"..";} 60%,80%{content:"...";} }
+
+  .hidden { display:none !important; }
+
+  .helper { font-size:12px; color:var(--text-faint); margin-top:6px; }
+  .diag-status { margin-top:10px; font-size:13px; color:var(--text-mute); text-align:center; min-height:1.4em; }
+
+  footer.site { border-top:1px solid var(--border); padding:24px 20px; text-align:center; font-size:12px; color:var(--text-faint); }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a href="/mieteru" class="logo">
+      <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-label="SEOAI"><defs><linearGradient id="lg-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#16213e"/></linearGradient><linearGradient id="lg-fg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#55e1dd"/><stop offset="100%" stop-color="#9769ef"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#lg-bg)"/><text x="32" y="46" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" fill="url(#lg-fg)">S</text><circle cx="48" cy="16" r="5" fill="none" stroke="#55e1dd" stroke-width="1.5" opacity="0.6"/><circle cx="48" cy="16" r="2" fill="#55e1dd" opacity="0.6"/></svg>
+      <div class="logo-text">AIミエテル<small>by SEOAI</small></div>
+    </a>
+    <a href="/mieteru" class="back">← トップに戻る</a>
+  </div>
+</header>
+
+<main>
+
+  <div class="stepper" id="stepper">
+    <div class="step active" data-step="1"><div class="dot">1</div><div class="lb">URL入力</div></div>
+    <div class="sep"></div>
+    <div class="step" data-step="2"><div class="dot">2</div><div class="lb">情報を確認</div></div>
+    <div class="sep"></div>
+    <div class="step" data-step="3"><div class="dot">3</div><div class="lb">アカウント作成</div></div>
+  </div>
+
+  <!-- ── Step 1: URL ── -->
+  <section class="card" id="step-1">
+    <h1>あなたの<span class="accent">AIミエテルページ</span>を作成</h1>
+    <p class="sub">サイトのURLを入力するだけ。AIが自動でビジネス情報を読み取ります。</p>
+    <label class="label">サイトURL</label>
+    <div class="url-input-wrap">
+      <span class="icon">🌐</span>
+      <input id="autofill-url" type="text" placeholder="https://your-shop.com" autocomplete="url" inputmode="url">
+    </div>
+    <p class="helper">対象サイトのトップページURLを入力してください。</p>
+    <button id="autofill-btn" class="btn-primary" onclick="runAutofill()">🤖 AIに情報を読み取ってもらう</button>
+    <p id="autofill-status" class="diag-status" aria-live="polite"></p>
+    <div id="autofill-error"></div>
+  </section>
+
+  <!-- ── Step 2: Review autofilled fields ── -->
+  <section class="card hidden" id="step-2">
+    <h1>AIが読み取った情報</h1>
+    <p class="sub">内容を確認して、必要なら修正してください。</p>
+
+    <div class="result-summary" id="diag-summary">読み込み中…</div>
+
+    <form id="profile-form" onsubmit="goToSignup(event)">
+      <div class="field-row">
+        <label>ビジネス名</label>
+        <input class="input-text" name="business_name" required>
+      </div>
+      <div class="grid-2">
+        <div class="field-row">
+          <label>業種</label>
+          <input class="input-text" name="industry" placeholder="例：歯科、美容室、レストラン">
+        </div>
+        <div class="field-row">
+          <label>所在地</label>
+          <input class="input-text" name="location" placeholder="例：横浜市中区">
+        </div>
+      </div>
+      <div class="field-row">
+        <label>サービス・商品の概要</label>
+        <textarea class="input-text" name="description" rows="3" required></textarea>
+      </div>
+      <div class="grid-2">
+        <div class="field-row">
+          <label>電話番号</label>
+          <input class="input-text" name="phone" placeholder="03-0000-0000">
+        </div>
+        <div class="field-row">
+          <label>営業時間</label>
+          <input class="input-text" name="hours" placeholder="例：平日 9:00–18:00">
+        </div>
+      </div>
+      <div class="field-row">
+        <label>キーワード（カンマ区切り）</label>
+        <input class="input-text" name="keywords" placeholder="例：横浜, 歯科, インプラント">
+      </div>
+
+      <button type="button" class="btn-ghost" onclick="goBack()">← URLを変更</button>
+      <button type="submit" class="btn-primary">次へ：アカウント作成 →</button>
+    </form>
+  </section>
+
+  <!-- ── Step 3: Account ── -->
+  <section class="card hidden" id="step-3">
+    <h1>アカウントを作成</h1>
+    <p class="sub">作成したページを管理するためのアカウントを作ります。<br>1ヶ月無料・カード登録は次のステップです。</p>
+    <form onsubmit="submitSignup(event)">
+      <div class="field-row">
+        <label>メールアドレス</label>
+        <input class="input-text" name="email" type="email" required placeholder="you@example.com">
+      </div>
+      <div class="field-row">
+        <label>パスワード（8文字以上）</label>
+        <input class="input-text" name="password" type="password" required minlength="8" placeholder="••••••••">
+      </div>
+      <p class="helper">アカウント作成後、ダッシュボードでミエテルページの最終調整と公開ができます。</p>
+      <button type="button" class="btn-ghost" onclick="showStep(2)">← 戻る</button>
+      <button type="submit" class="btn-primary">🎉 ミエテルページを作成する</button>
+      <div id="signup-error"></div>
+    </form>
+  </section>
+
+</main>
+
+<footer class="site">© 2026 AIミエテル / SEOAI（Blocksky）</footer>
+
+<script>
+  let diagData = null;
+
+  function showStep(n) {
+    [1,2,3].forEach(i => document.getElementById("step-" + i).classList.toggle("hidden", i !== n));
+    document.querySelectorAll("#stepper .step").forEach(el => {
+      const s = parseInt(el.dataset.step, 10);
+      el.classList.toggle("active", s === n);
+      el.classList.toggle("done", s < n);
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function goBack() { showStep(1); }
+
+  function autofillFromDiagnosis(data) {
+    // /api/score returns scoring + finding counts but not structured profile fields.
+    // We surface the diagnosis summary at top; user fills business details here,
+    // and the fuller AI auto-fill runs server-side after sign-up (in /app).
+    const ai = Math.round(data.ai_score || 0);
+    const web = Math.round(data.web_score || 0);
+    const overall = Math.round((ai + web) / 2);
+    const f = data.findings || {};
+    const total = f.total || ((f.high||0)+(f.medium||0)+(f.low||0));
+    document.getElementById("diag-summary").innerHTML =
+      `🔍 診断結果：<b>ミエテル度 ${overall}/100点</b>（AI:${ai} / Web:${web}）・改善ポイント ${total}件<br>下記のビジネス情報を確認してください。アカウント作成後、AIがさらに詳しく自動入力します。`;
+  }
+
+  const SCORE_TIMEOUT_MS = 120000;
+
+  function normalizeUrlInput(raw) {
+    let u = (raw || "").trim();
+    if (!u) return "";
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    return u;
+  }
+
+  async function postScore(url, onProgress) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), SCORE_TIMEOUT_MS);
+    const tick = setInterval(() => { if (onProgress) onProgress(); }, 5000);
+    try {
+      const res = await fetch("/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url }),
+        signal: controller.signal,
+      });
+      const text = await res.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (_parseErr) {
+        throw new Error(
+          res.status === 504
+            ? "読み取りがタイムアウトしました。しばらくしてからもう一度お試しください。"
+            : "サーバーからの応答を読み取れませんでした。"
+        );
+      }
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "サイトを読み取れませんでした。URLをご確認ください。");
+      }
+      return data;
+    } catch (e) {
+      if (e && e.name === "AbortError") {
+        throw new Error("読み取りがタイムアウトしました（2分）。通信環境をご確認のうえ、もう一度お試しください。");
+      }
+      throw e;
+    } finally {
+      clearTimeout(timer);
+      clearInterval(tick);
+    }
+  }
+
+  async function runAutofill() {
+    const inp = document.getElementById("autofill-url");
+    const btn = document.getElementById("autofill-btn");
+    const errBox = document.getElementById("autofill-error");
+    const statusEl = document.getElementById("autofill-status");
+    errBox.innerHTML = "";
+    const url = normalizeUrlInput(inp.value);
+    if (!url) { inp.focus(); return; }
+    if (url !== (inp.value || "").trim()) inp.value = url;
+
+    btn.disabled = true;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="loading-dots">読み取り中</span>';
+    const started = Date.now();
+    const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+    setStatus("サイトを解析しています… 通常20〜60秒かかります。");
+    try {
+      const data = await postScore(url, () => {
+        const sec = Math.round((Date.now() - started) / 1000);
+        setStatus(`読み取り中… ${sec}秒経過（通常20〜60秒）`);
+      });
+      setStatus("");
+      diagData = data;
+      autofillFromDiagnosis(data);
+      showStep(2);
+    } catch (e) {
+      setStatus("");
+      errBox.innerHTML = `<div class="err-msg">${(e && e.message) || "エラーが発生しました。"}</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+
+  function goToSignup(e) {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const profile = {};
+    fd.forEach((v, k) => profile[k] = v);
+    sessionStorage.setItem("mieteru_profile", JSON.stringify(profile));
+    sessionStorage.setItem("mieteru_diag", JSON.stringify(diagData || {}));
+    showStep(3);
+  }
+
+  async function submitSignup(e) {
+    e.preventDefault();
+    const errBox = document.getElementById("signup-error");
+    errBox.innerHTML = "";
+    const fd = new FormData(e.target);
+    const email = fd.get("email");
+    const password = fd.get("password");
+    const profile = JSON.parse(sessionStorage.getItem("mieteru_profile") || "{}");
+    const diag = JSON.parse(sessionStorage.getItem("mieteru_diag") || "{}");
+
+    // Try the dedicated Mieteru signup endpoint; if not yet deployed, fall back
+    // to redirecting into the main /app signup flow with seed data in sessionStorage.
+    try {
+      const res = await fetch("/api/mieteru/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email, password: password,
+          profile: profile,
+          source_url: (diag.input_url || ""),
+          plan: "free"
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok) { window.location.href = data.next_url || "https://mini.seoai.space/"; return; }
+        throw new Error(data.error || "アカウント作成に失敗しました。");
+      }
+      if (res.status !== 404) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "アカウント作成に失敗しました。");
+      }
+    } catch (err) {
+      if (err && err.message && !/404/.test(err.message)) {
+        errBox.innerHTML = `<div class="err-msg">${err.message}</div>`;
+        return;
+      }
+    }
+    // Fallback: persist seed and bounce into the main app for sign-up.
+    sessionStorage.setItem("mieteru_signup_email", email);
+    window.location.href = "https://mini.seoai.space/?signup=1&source=mieteru&email=" + encodeURIComponent(email);
+  }
+
+  // Prefill URL from query param
+  (function() {
+    const params = new URLSearchParams(location.search);
+    const u = params.get("url");
+    if (u) document.getElementById("autofill-url").value = u;
+  })();
+
+  document.querySelectorAll('input[type="text"][inputmode="url"]').forEach(inp => {
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); runAutofill(); }
+    });
+  });
+</script>
+
+</body>
+</html>

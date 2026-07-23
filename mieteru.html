@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIミエテル — ChatGPT検索対応の無料診断ツール | SEOAI</title>
+<meta name="description" content="あなたのサイト、ChatGPTから見えてる？URLを入れるだけで「ミエテル度」を無料診断。AIに見えない原因と改善策がすぐにわかります。月額¥2,980、最初の1ヶ月は無料。">
+<meta property="og:title" content="AIミエテル — ChatGPT検索対応の無料診断ツール">
+<meta property="og:description" content="URLを入れるだけ・登録不要・完全無料。あなたのサイトのミエテル度をチェック。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/hero.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg:        #0a0e1f;
+    --bg-soft:   #11162e;
+    --bg-card:   rgba(255,255,255,0.04);
+    --bg-card-hi:rgba(255,255,255,0.07);
+    --border:    rgba(120,170,255,0.18);
+    --border-hi: rgba(120,170,255,0.45);
+    --primary:   #4a8cff;
+    --cyan:      #14b4e6;
+    --teal:      #55e1dd;
+    --accent:    #6c5dd3;
+    --warn:      #ffb347;
+    --danger:    #ff6b8b;
+    --good:      #4ade80;
+    --text:      #ffffff;
+    --text-mute: #a8b1cc;
+    --text-faint:#6b7390;
+    --grad:      linear-gradient(135deg, #4a8cff 0%, #14b4e6 100%);
+    --grad-warm: linear-gradient(135deg, #6c5dd3 0%, #4a8cff 100%);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Helvetica Neue", sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.7;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  ul { list-style: none; }
+
+  /* ── Header ── */
+  header.site {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,14,31,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  header .wrap {
+    max-width: 1100px; margin: 0 auto;
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .logo-icon { width: 34px; height: 34px; display: block; flex-shrink: 0; }
+  .logo-text small { display: block; font-size: 11px; color: var(--text-faint); font-weight: 500; line-height: 1; }
+  .nav-cta {
+    background: var(--grad); color: #fff;
+    padding: 10px 20px; border-radius: 999px;
+    font-weight: 700; font-size: 14px;
+    box-shadow: 0 4px 16px rgba(74,140,255,0.3);
+    transition: transform .15s;
+  }
+  .nav-cta:hover { transform: translateY(-1px); }
+  /* PATCH-2026-05-22-MIETERU-LOGIN-LINK */
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .nav-login { color: var(--text-mute); font-size: 13px; font-weight: 600; padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px; transition: color .15s, border-color .15s; white-space: nowrap; }
+  .nav-login:hover { color: #fff; border-color: var(--border-hi); }
+  @media (max-width: 480px) { .nav-login { padding: 6px 10px; font-size: 12px; } }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 60px 20px 80px;
+    text-align: center;
+    background: radial-gradient(ellipse at top, rgba(74,140,255,0.12), transparent 60%);
+  }
+  .hero .wrap { max-width: 720px; margin: 0 auto; }
+  .badge-pill {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: rgba(108,93,211,0.2);
+    border: 1px solid rgba(108,93,211,0.4);
+    font-size: 13px; font-weight: 600;
+    color: #b9a9ff;
+    margin-bottom: 24px;
+  }
+  h1.hero-title {
+    font-size: clamp(28px, 5vw, 42px);
+    line-height: 1.35; font-weight: 800;
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+  }
+  h1 .accent { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero-sub {
+    color: var(--text-mute);
+    font-size: 16px;
+    margin-bottom: 36px;
+  }
+  .mascot {
+    width: 110px; height: 110px;
+    margin: 28px auto;
+    border-radius: 50%;
+    background: linear-gradient(160deg, #4a8cff 0%, #6c5dd3 100%);
+    display: grid; place-items: center;
+    position: relative;
+    box-shadow: 0 12px 40px rgba(74,140,255,0.4);
+  }
+  .mascot::before {
+    content: ""; position: absolute;
+    inset: -8px; border-radius: 50%;
+    background: linear-gradient(135deg, rgba(74,140,255,0.3), transparent);
+    z-index: -1; filter: blur(20px);
+  }
+  .mascot-face {
+    color: #fff; font-size: 38px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .mascot-tag {
+    position: absolute; top: -10px; right: -34px;
+    background: #fff; color: #1a1f3a;
+    font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 999px;
+    transform: rotate(8deg);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  /* ── URL diagnose card ── */
+  .diag-card {
+    background: var(--bg-soft);
+    border: 1px solid var(--border-hi);
+    border-radius: 20px;
+    padding: 28px 24px;
+    margin-top: 20px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+  }
+  .diag-card .label {
+    font-size: 13px; color: var(--text-mute);
+    margin-bottom: 16px;
+  }
+  .diag-card h3 {
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .diag-card .sub { font-size: 12px; color: var(--text-faint); margin-bottom: 16px; }
+  .url-input-wrap {
+    display: flex; align-items: center;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px 4px 4px 14px;
+    margin-bottom: 14px;
+  }
+  .url-input-wrap .icon { font-size: 16px; color: var(--text-faint); margin-right: 8px; }
+  .url-input-wrap input {
+    flex: 1; background: transparent; border: none;
+    color: #fff; font-size: 15px; padding: 12px 4px;
+    outline: none;
+  }
+  .url-input-wrap input::placeholder { color: var(--text-faint); }
+  .btn-primary {
+    display: block; width: 100%;
+    padding: 14px 20px;
+    background: var(--grad); color: #fff;
+    border-radius: 12px; font-weight: 700; font-size: 15px;
+    box-shadow: 0 6px 20px rgba(74,140,255,0.35);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(74,140,255,0.45); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .diag-foot {
+    margin-top: 12px; font-size: 12px; color: var(--text-faint); text-align: center;
+  }
+  .ai-chips {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+    margin-top: 24px;
+  }
+  .ai-chips span {
+    padding: 6px 14px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 999px; font-size: 12px; color: var(--text-mute);
+  }
+
+  /* ── Section base ── */
+  section { padding: 70px 20px; }
+  section .wrap { max-width: 720px; margin: 0 auto; }
+  .sec-eyebrow {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(74,140,255,0.15);
+    border: 1px solid rgba(74,140,255,0.35);
+    border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+    color: #8db4ff;
+    margin-bottom: 16px;
+  }
+  .sec-title {
+    font-size: clamp(22px, 4vw, 30px);
+    font-weight: 800; line-height: 1.4;
+    text-align: center; margin-bottom: 8px;
+  }
+  .sec-subtitle { text-align: center; color: var(--text-mute); margin-bottom: 36px; font-size: 14px; }
+  .sec-head { text-align: center; margin-bottom: 44px; }
+
+  /* ── Problem cards ── */
+  .problems { background: linear-gradient(180deg, transparent, rgba(108,93,211,0.05) 50%, transparent); }
+  .problem-card {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 14px;
+    transition: border-color .2s, transform .2s;
+  }
+  .problem-card:hover { border-color: var(--border-hi); transform: translateY(-2px); }
+  .problem-card .emoji { font-size: 28px; flex-shrink: 0; }
+  .problem-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .problem-card p { font-size: 13px; color: var(--text-mute); }
+
+  /* ── Score gauge demo ── */
+  .gauge-demo {
+    background: var(--bg-soft);
+    border: 1px solid var(--border-hi);
+    border-radius: 20px;
+    padding: 24px;
+    margin-top: 20px;
+  }
+  .gauge-bar {
+    position: relative;
+    height: 14px; border-radius: 999px;
+    background: linear-gradient(90deg,
+      #ff6b8b 0%, #ffb347 30%, #ffd93d 50%,
+      #4ade80 70%, #14b4e6 100%);
+    margin: 16px 0;
+  }
+  .gauge-marks { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-faint); padding: 0 4px; }
+  .gauge-grades { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 14px; text-align: center; }
+  .gauge-grades div { font-size: 11px; color: var(--text-mute); }
+  .gauge-grades div .em { display: block; font-size: 22px; margin-bottom: 4px; }
+  .gauge-grades div .lb { font-weight: 700; color: var(--text); display: block; font-size: 12px; }
+
+  .score-card-demo {
+    margin-top: 22px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .score-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+  }
+  .score-head h4 { font-size: 14px; color: var(--text-mute); font-weight: 600; }
+  .score-big {
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .score-big .num { font-size: 56px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1; }
+  .score-big .max { color: var(--text-faint); font-size: 14px; }
+  .grade-badge {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--warn); color: #fff;
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 20px;
+  }
+  .score-bars { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .sb-row { display: flex; align-items: center; gap: 12px; font-size: 12px; }
+  .sb-row .name { width: 130px; color: var(--text-mute); }
+  .sb-row .bar { flex: 1; height: 8px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden; }
+  .sb-row .bar > div { height: 100%; border-radius: 999px; }
+  .sb-row .val { font-weight: 700; min-width: 40px; text-align: right; }
+
+  .findings { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .finding {
+    display: flex; gap: 12px; padding: 14px;
+    background: rgba(255,107,139,0.08);
+    border: 1px solid rgba(255,107,139,0.25);
+    border-radius: 12px;
+  }
+  .finding.warn {
+    background: rgba(255,179,71,0.08);
+    border-color: rgba(255,179,71,0.3);
+  }
+  .finding .ic { font-size: 18px; flex-shrink: 0; }
+  .finding .body { font-size: 13px; }
+  .finding .body b { display: block; margin-bottom: 4px; font-size: 14px; }
+  .finding .body p { color: var(--text-mute); }
+
+  /* ── Bridge / pain ── */
+  .bridge {
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .bridge .icon { font-size: 36px; margin-bottom: 16px; }
+  .bridge h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+  .bridge p { color: var(--text-mute); font-size: 14px; margin-bottom: 8px; }
+  .bridge .quotes { font-style: italic; color: var(--text-faint); font-size: 13px; margin-top: 12px; }
+  .bridge .down { font-size: 28px; margin: 24px 0 12px; color: var(--text-faint); }
+  .bridge .promise { color: var(--cyan); font-weight: 700; font-size: 15px; }
+
+  /* ── Solution ── */
+  .solution {
+    background: linear-gradient(180deg, rgba(74,140,255,0.06), transparent);
+  }
+  .solution-card {
+    background: var(--bg-soft);
+    border: 1px solid var(--border-hi);
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .solution-card .mascot { width: 80px; height: 80px; margin-bottom: 16px; }
+  .solution-card .mascot-face { font-size: 28px; }
+  .solution-card h3 { font-size: 18px; font-weight: 800; margin-bottom: 10px; }
+  .solution-card p.lead { font-size: 13px; color: var(--text-mute); margin-bottom: 24px; }
+  .features { display: flex; flex-direction: column; gap: 14px; text-align: left; margin-top: 8px; }
+  .feature {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 14px; background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .feature .em { font-size: 22px; flex-shrink: 0; }
+  .feature h5 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .feature p { font-size: 12px; color: var(--text-mute); }
+  .solution-cta {
+    display: block; width: 100%;
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--grad); color: #fff;
+    border-radius: 12px; font-weight: 700; font-size: 16px;
+    box-shadow: 0 6px 20px rgba(74,140,255,0.35);
+  }
+
+  /* ── Pricing ── */
+  .pricing { background: linear-gradient(180deg, transparent, rgba(108,93,211,0.05)); }
+  .price-grid { display: flex; flex-direction: column; gap: 16px; }
+  .price-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 22px;
+    position: relative;
+  }
+  .price-card.featured {
+    background: var(--bg-soft);
+    border: 2px solid var(--primary);
+    box-shadow: 0 12px 40px rgba(74,140,255,0.2);
+  }
+  .price-card.featured::before {
+    content: "おすすめ・1ヶ月無料お試し";
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    background: var(--grad); color: #fff;
+    padding: 5px 16px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+    box-shadow: 0 4px 12px rgba(74,140,255,0.4);
+    white-space: nowrap;
+  }
+  .price-name { font-size: 14px; font-weight: 600; color: var(--text-mute); margin-bottom: 8px; }
+  .price-amount { font-size: 36px; font-weight: 800; margin-bottom: 6px; }
+  .price-amount .per { font-size: 14px; color: var(--text-faint); font-weight: 500; }
+  .price-trial { color: var(--cyan); font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+  .price-features { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .price-features li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-mute); }
+  .price-features li::before { content: "✓"; color: var(--good); font-weight: 800; flex-shrink: 0; }
+  .price-note {
+    margin-top: 18px; padding: 12px; font-size: 12px;
+    background: rgba(0,0,0,0.25); border-radius: 10px;
+    color: var(--text-mute); line-height: 1.6;
+  }
+
+  /* ── FAQ ── */
+  .faq-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .faq-q {
+    display: block; width: 100%; text-align: left;
+    padding: 16px 20px;
+    font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .faq-q::before { content: "Q."; color: var(--cyan); font-weight: 800; }
+  .faq-a { padding: 0 20px 16px 38px; font-size: 13px; color: var(--text-mute); }
+
+  /* ── Final CTA ── */
+  .final-cta { text-align: center; padding-bottom: 80px; }
+  .final-cta .mascot { width: 80px; height: 80px; margin: 0 auto 20px; }
+  .final-cta .mascot-face { font-size: 28px; }
+  .final-cta h3 { font-size: 22px; font-weight: 800; margin-bottom: 12px; line-height: 1.4; }
+  .final-cta p { color: var(--text-mute); font-size: 14px; margin-bottom: 28px; }
+
+  /* ── Footer ── */
+  footer.site {
+    border-top: 1px solid var(--border);
+    padding: 30px 20px;
+    text-align: center;
+  }
+  footer .logo { justify-content: center; margin-bottom: 12px; }
+  .foot-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-bottom: 12px; font-size: 12px; }
+  .foot-links a { color: var(--text-mute); }
+  .foot-links a:hover { color: var(--text); }
+  .copyright { font-size: 11px; color: var(--text-faint); }
+
+  /* ── Result render (live) ── */
+  #live-result { display: none; margin-top: 22px; }
+  #live-result.show { display: block; }
+  .err-msg {
+    margin-top: 12px; padding: 10px 14px;
+    background: rgba(255,107,139,0.1);
+    border: 1px solid rgba(255,107,139,0.3);
+    border-radius: 8px;
+    color: #ffb3c1; font-size: 13px; text-align: center;
+  }
+  .loading-dots::after {
+    content: "."; animation: dots 1.4s infinite steps(4, end);
+  }
+  @keyframes dots {
+    0%, 20% { content: "."; }
+    40%     { content: ".."; }
+    60%, 80%{ content: "..."; }
+  }
+  .diag-status {
+    margin-top: 10px; font-size: 13px; color: var(--text-mute);
+    text-align: center; min-height: 1.4em;
+  }
+
+  @media (min-width: 768px) {
+    .price-grid { flex-direction: row; align-items: stretch; }
+    .price-card { flex: 1; }
+    .features { display: grid; grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <div class="logo">
+      <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-label="SEOAI"><defs><linearGradient id="lg-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#16213e"/></linearGradient><linearGradient id="lg-fg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#55e1dd"/><stop offset="100%" stop-color="#9769ef"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#lg-bg)"/><text x="32" y="46" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" fill="url(#lg-fg)">S</text><circle cx="48" cy="16" r="5" fill="none" stroke="#55e1dd" stroke-width="1.5" opacity="0.6"/><circle cx="48" cy="16" r="2" fill="#55e1dd" opacity="0.6"/></svg>
+      <div class="logo-text">AIミエテル<small>by SEOAI</small></div>
+    </div>
+    <div class="nav-right">
+      <a href="/mieteru/login" class="nav-login">🔑 マイページ</a>
+      <a href="#diagnose" class="nav-cta">無料で診断する</a>
+    </div>
+  </div>
+</header>
+
+<!-- ── Hero ── -->
+<section class="hero" id="diagnose">
+  <div class="wrap">
+    <span class="badge-pill">✨ SEOAIの新サービス</span>
+    <h1 class="hero-title">あなたのサイト、<br><span class="accent">ChatGPTから見えてる？</span></h1>
+    <p class="hero-sub">まず現状を診断して、改善まで一気通貫。それが<b>AIミエテル</b>です。<br>いまや、お店や会社を探すとき「ChatGPTに聞く」人が増えています。<br>見えていないと、お客さんに届きません。</p>
+
+    <div class="mascot">
+      <div class="mascot-face">🤖</div>
+      <div class="mascot-tag">URLを入れるだけ！<br>今すぐ確認できます😊</div>
+    </div>
+
+    <div class="diag-card">
+      <h3>あなたのサイトのミエテル度は？</h3>
+      <p class="sub">URLを入力するだけ・登録不要・完全無料</p>
+      <div class="url-input-wrap">
+        <span class="icon">🌐</span>
+        <input id="hero-url" type="text" placeholder="https://your-site.com" autocomplete="url" inputmode="url">
+      </div>
+      <button id="hero-btn" class="btn-primary" onclick="diagnose('hero-url','hero-btn','live-result','hero-status')">🔍 無料でミエテル度をチェック</button>
+      <p id="hero-status" class="diag-status" aria-live="polite"></p>
+      <p class="diag-foot">診断は完全無料・登録不要</p>
+      <div id="live-result"></div>
+    </div>
+
+    <div class="ai-chips">
+      <span>ChatGPT</span><span>Google</span><span>Gemini</span><span>Perplexity</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── Problems ── -->
+<section class="problems">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-eyebrow">😟 こんな悩みありませんか？</span>
+      <h2 class="sec-title">「うちは大丈夫」は<br>危ないかもしれません</h2>
+    </div>
+    <div class="problem-card">
+      <div class="emoji">😰</div>
+      <div>
+        <h4>ChatGPTに聞いたら、ライバルだけ出てきた…</h4>
+        <p>「〇〇市のおすすめ〇〇は？」と聞いたとき、あなたのお店が出てこない。AIに見えていない可能性があります。</p>
+      </div>
+    </div>
+    <div class="problem-card">
+      <div class="emoji">📉</div>
+      <div>
+        <h4>Googleだけ対策してても、もう足りない</h4>
+        <p>これからはAIで検索する人がどんどん増えます。Googleだけでは、新しい検索に対応できません。</p>
+      </div>
+    </div>
+    <div class="problem-card">
+      <div class="emoji">🤷</div>
+      <div>
+        <h4>何をどう直せばいいかわからない</h4>
+        <p>「AI対策が必要」と聞いても、具体的に何をすればいいのか、わからない方がほとんどです。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Score gauge demo ── -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-eyebrow">📊 診断結果イメージ</span>
+      <h2 class="sec-title">ミエテル度が<br>すぐにわかります</h2>
+    </div>
+
+    <div class="gauge-demo">
+      <h4 style="font-size:13px;color:var(--text-mute);margin-bottom:6px;">📊 ミエテル度の目安</h4>
+      <div class="gauge-bar"></div>
+      <div class="gauge-marks"><span>0</span><span>30</span><span>50</span><span>70</span><span>85</span><span>100</span></div>
+      <div class="gauge-grades">
+        <div><span class="em">😱</span><span class="lb">危険</span>〜29</div>
+        <div><span class="em">😰</span><span class="lb">要改善</span>30〜49</div>
+        <div><span class="em">😐</span><span class="lb">普通</span>50〜69</div>
+        <div><span class="em">😊</span><span class="lb">良好</span>70〜84</div>
+        <div><span class="em">🤩</span><span class="lb">優秀</span>85〜</div>
+      </div>
+    </div>
+
+    <div class="score-card-demo">
+      <div class="score-head">
+        <h4>ミエテル度スコア</h4>
+        <div class="grade-badge" style="background:#ff6b8b;">D</div>
+      </div>
+      <div class="score-big"><span class="num">38</span><span class="max">/ 100点</span></div>
+      <div class="score-bars">
+        <div class="sb-row"><span class="name">AI検索への見えやすさ</span><div class="bar"><div style="width:38%;background:#ff6b8b;"></div></div><span class="val">38点</span></div>
+        <div class="sb-row"><span class="name">Google検索への見えやすさ</span><div class="bar"><div style="width:52%;background:#ffb347;"></div></div><span class="val">52点</span></div>
+      </div>
+      <h5 style="margin-top:20px;font-size:13px;color:var(--text-mute);font-weight:600;">⚠️ 見えにくくなっている原因</h5>
+      <div class="findings">
+        <div class="finding"><span class="ic">❌</span><div class="body"><b>AIがあなたのお店を認識できていない</b><p>業種・場所・サービス内容をAIが読み取れる形式になっていません。</p></div></div>
+        <div class="finding"><span class="ic">❌</span><div class="body"><b>AIがサイトを見に来られない設定になっている</b><p>ChatGPTなどのAIがサイトを読みに来ても、ブロックされています。</p></div></div>
+        <div class="finding warn"><span class="ic">⚠️</span><div class="body"><b>AIが答えやすいQ&Aコンテンツが少ない</b><p>AIはQ&A形式のコンテンツを好みます。</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Bridge ── -->
+<section class="bridge">
+  <div class="wrap">
+    <span class="sec-eyebrow">😓 でも…</span>
+    <h2 class="sec-title">「改善点はわかった。<br>でも自分では直せない」</h2>
+    <div class="problem-card" style="margin-top:24px;display:block;text-align:center;">
+      <div class="emoji" style="font-size:36px;margin-bottom:12px;">🤯</div>
+      <h4 style="font-size:16px;margin-bottom:10px;">改善には専門知識が必要です</h4>
+      <p>サイトの設定変更、コード修正、専用ファイルの設置…</p>
+      <div class="quotes">「やり方がわからない」「触るのが怖い」<br>そんな方がほとんどです。</div>
+      <p style="margin-top:14px;color:var(--text-faint);">業者に頼むと、数十万円かかることも。</p>
+    </div>
+    <div class="down">👇</div>
+    <div class="promise">もっとかんたんな方法があります</div>
+    <p style="margin-top:6px;font-size:13px;color:var(--text-mute);">既存サイトをいじらなくてOK。URLを入れるだけで簡単設定。</p>
+  </div>
+</section>
+
+<!-- ── Solution ── -->
+<section class="solution">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-eyebrow">✨ 解決策</span>
+      <h2 class="sec-title">「AIミエテルページ」を<br>作るだけでOK！</h2>
+    </div>
+    <div class="solution-card">
+      <span class="badge-pill" style="background:rgba(74,140,255,0.18);border-color:rgba(74,140,255,0.4);color:#8db4ff;">🎉 これが一番かんたん！</span>
+      <div class="mascot" style="margin-top:16px;"><div class="mascot-face">🤖</div></div>
+      <h3>あなた専用の<br>「AIミエテルページ」を作成</h3>
+      <p class="lead">既存サイトをいじらなくてOK。<br>URLを入れるだけで、AIに見えやすい専用ページを自動で作成します。</p>
+      <div class="features">
+        <div class="feature"><span class="em">🤖</span><div><h5>ChatGPT・Geminiから見つけてもらえる</h5><p>AIがあなたのビジネスを学習して紹介してくれるようになります</p></div></div>
+        <div class="feature"><span class="em">⚡</span><div><h5>URLを入れるだけで簡単設定</h5><p>難しい設定は一切不要。入力するだけで完成します</p></div></div>
+        <div class="feature"><span class="em">🔧</span><div><h5>既存サイトの改修は不要</h5><p>今のサイトはそのままでOKです</p></div></div>
+        <!-- PATCH-2026-05-26-MIETERU-FIXES-8: graph feature card removed (Akira ask) -->
+      </div>
+      <a href="/mieteru/demo" class="solution-cta">🚀 AIミエテルページを作る</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Pricing ── -->
+<section class="pricing">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-eyebrow">💰 シンプルな料金</span>
+      <h2 class="sec-title">最初の1ヶ月は無料<br>試してから決められます</h2>
+    </div>
+    <div class="price-grid">
+      <!-- PATCH-2026-05-26-MIETERU-FIXES #1: Free Plan card removed -->
+      <div class="price-card featured">
+        <div class="price-name">スタンダードプラン</div>
+        <div class="price-amount">¥2,980<span class="per"> / 月</span></div>
+        <div class="price-trial">👉 1ヶ月無料 → 2ヶ月目から課金</div>
+        <ul class="price-features">
+          <li>AIミエテルページ作成（自動生成）</li>
+          <li>ミエテル度診断 無制限</li>
+          <li>改善ポイントすべて表示</li>
+          <li>メールサポートあり</li>
+        </ul>
+        <div class="price-note">✅ 1ヶ月間は完全無料。2ヶ月目から月額2,980円。<br>いつでも解約可能です。<br>💳 ページ作成時にクレジットカードのご登録が必要です。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ── -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-eyebrow">❓ よくある質問</span>
+      <h2 class="sec-title">疑問にお答えします</h2>
+    </div>
+    <details class="faq-item"><summary class="faq-q">難しい知識がなくても使えますか？</summary><div class="faq-a">はい！URLを入力するだけでOKです。専門的な設定や知識は一切不要です。</div></details>
+    <details class="faq-item"><summary class="faq-q">既存のサイトをいじる必要はありますか？</summary><div class="faq-a">不要です。AIミエテルが専用ページを自動で作成するので、今のサイトはそのままで大丈夫です。</div></details>
+    <details class="faq-item"><summary class="faq-q">効果が出るまでどのくらいかかりますか？</summary><div class="faq-a">サイトや業種によって異なります。早いケースでは数週間、通常は1〜3ヶ月ほどで変化が出始めます。</div></details>
+    <details class="faq-item"><summary class="faq-q">無料期間中に解約したら料金はかかりますか？</summary><div class="faq-a">かかりません。1ヶ月の無料期間中に解約すれば、一切費用は発生しません。</div></details>
+    <details class="faq-item"><summary class="faq-q">AIミエテルページとは何ですか？</summary><div class="faq-a">ChatGPTやGoogleなどのAIが「おすすめ」として紹介しやすいよう最適化された、あなた専用のビジネス紹介ページです。既存サイトとは独立したURLで公開されます。</div></details>
+  </div>
+</section>
+
+<!-- ── Final CTA ── -->
+<section class="final-cta">
+  <div class="wrap">
+    <div class="mascot"><div class="mascot-face">🤖</div></div>
+    <h3>まずはミエテル度チェックから<br>はじめよう！</h3>
+    <p>URLを入力するだけ。登録不要・完全無料。<br>あなたのサイトが今どれだけAIに見えているか、すぐにわかります。</p>
+    <div class="diag-card" style="text-align:left;">
+      <div class="url-input-wrap">
+        <span class="icon">🌐</span>
+        <input id="cta-url" type="text" placeholder="https://your-site.com" autocomplete="url" inputmode="url">
+      </div>
+      <button id="cta-btn" class="btn-primary" onclick="diagnose('cta-url','cta-btn','cta-result','cta-status')">🔍 無料でミエテル度をチェック</button>
+      <p id="cta-status" class="diag-status" aria-live="polite"></p>
+      <p class="diag-foot">診断は無料です。すぐにAI検索結果に出ることを保証するものではありません。</p>
+      <div id="cta-result"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="logo">
+    <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-label="SEOAI"><defs><linearGradient id="lg-bg2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#16213e"/></linearGradient><linearGradient id="lg-fg2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#55e1dd"/><stop offset="100%" stop-color="#9769ef"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#lg-bg2)"/><text x="32" y="46" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" fill="url(#lg-fg2)">S</text><circle cx="48" cy="16" r="5" fill="none" stroke="#55e1dd" stroke-width="1.5" opacity="0.6"/><circle cx="48" cy="16" r="2" fill="#55e1dd" opacity="0.6"/></svg>
+    <div class="logo-text">AIミエテル<small>by SEOAI</small></div>
+  </div>
+  <div class="foot-links">
+    <a href="/mieteru/terms">利用規約</a>
+    <a href="/mieteru/privacy">プライバシーポリシー</a>
+    <a href="/mieteru/tokushoho">特定商取引法に基づく表記</a>
+    <a href="mailto:info@blocksky.xyz">お問い合わせ</a>
+    <a href="/">SEOAI公式サイト</a>
+  </div>
+  <div class="copyright">© 2026 AIミエテル / SEOAI（Blocksky）. All rights reserved.</div>
+</footer>
+
+<script>
+  function gradeFromScore(s) {
+    if (s >= 85) return { letter: "S", emoji: "🤩", label: "優秀", color: "#14b4e6" };
+    if (s >= 70) return { letter: "A", emoji: "😊", label: "良好", color: "#4ade80" };
+    if (s >= 50) return { letter: "B", emoji: "😐", label: "普通", color: "#ffd93d" };
+    if (s >= 30) return { letter: "C", emoji: "😰", label: "要改善", color: "#ffb347" };
+    return { letter: "D", emoji: "😱", label: "危険", color: "#ff6b8b" };
+  }
+
+  function severityIcon(sev) {
+    if (sev === "high") return { ic: "❌", cls: "" };
+    if (sev === "medium") return { ic: "⚠️", cls: " warn" };
+    return { ic: "ℹ️", cls: " warn" };
+  }
+
+  function renderResult(targetId, data) {
+    const ai = Math.round(data.ai_score || 0);
+    const web = Math.round(data.web_score || 0);
+    const overall = Math.round(((ai + web) / 2));
+    const g = gradeFromScore(overall);
+    const f = data.findings || {};
+    const high = f.high || 0, med = f.medium || 0, low = f.low || 0;
+    const total = f.total || (high + med + low);
+    const cards = [];
+    if (high > 0) cards.push(`<div class="finding"><span class="ic">❌</span><div class="body"><b>緊急で直すべき項目：${high}件</b><p>AIに見つけてもらえない原因になっている可能性が高い項目です。</p></div></div>`);
+    if (med > 0) cards.push(`<div class="finding warn"><span class="ic">⚠️</span><div class="body"><b>改善した方がよい項目：${med}件</b><p>修正することで、AIへの見えやすさが大きく向上します。</p></div></div>`);
+    if (low > 0) cards.push(`<div class="finding warn"><span class="ic">ℹ️</span><div class="body"><b>余裕があれば直したい項目：${low}件</b><p>細かい改善ポイントです。</p></div></div>`);
+    if (cards.length === 0) cards.push(`<div class="finding warn"><span class="ic">✅</span><div class="body"><b>大きな問題は見つかりませんでした</b><p>もう一歩上を目指すなら、AIミエテルページがおすすめです。</p></div></div>`);
+    const findingsHtml = cards.join("") + `<p style="margin-top:10px;font-size:12px;color:var(--text-faint);text-align:center;">合計 ${total} 件の改善ポイントを検出しました。</p>`;
+
+    const html = `
+      <div class="score-card-demo" style="margin-top:20px;">
+        <div class="score-head">
+          <h4>ミエテル度スコア</h4>
+          <div class="grade-badge" style="background:${g.color};">${g.letter}</div>
+        </div>
+        <div class="score-big"><span class="num">${overall}</span><span class="max">/ 100点 ${g.emoji} ${g.label}</span></div>
+        <div class="score-bars">
+          <div class="sb-row"><span class="name">AI検索への見えやすさ</span><div class="bar"><div style="width:${ai}%;background:${gradeFromScore(ai).color};"></div></div><span class="val">${ai}点</span></div>
+          <div class="sb-row"><span class="name">Google検索への見えやすさ</span><div class="bar"><div style="width:${web}%;background:${gradeFromScore(web).color};"></div></div><span class="val">${web}点</span></div>
+        </div>
+        <h5 style="margin-top:20px;font-size:13px;color:var(--text-mute);font-weight:600;">⚠️ 主な改善ポイント</h5>
+        <div class="findings">${findingsHtml}</div>
+        <div id="kw-${targetId}" style="margin-top:20px;"></div>
+        <!-- PATCH-2026-05-26-MIETERU-FIXES #2: keyword-opportunity button removed -->
+        <a href="/mieteru/demo?url=${encodeURIComponent(data.input_url || "")}" class="btn-primary" style="margin-top:20px;">🚀 AIミエテルページを作って改善する</a>
+      </div>`;
+    const el = document.getElementById(targetId);
+    el.innerHTML = html;
+    el.classList.add("show");
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  const SCORE_TIMEOUT_MS = 120000;
+
+  function normalizeUrlInput(raw) {
+    let u = (raw || "").trim();
+    if (!u) return "";
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    return u;
+  }
+
+  async function postScore(url, onProgress) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), SCORE_TIMEOUT_MS);
+    const tick = setInterval(() => { if (onProgress) onProgress(); }, 5000);
+    try {
+      const res = await fetch("/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url }),
+        signal: controller.signal,
+      });
+      const text = await res.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (_parseErr) {
+        throw new Error(
+          res.status === 504
+            ? "診断がタイムアウトしました。しばらくしてからもう一度お試しください。"
+            : "サーバーからの応答を読み取れませんでした。"
+        );
+      }
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "診断に失敗しました。");
+      }
+      return data;
+    } catch (e) {
+      if (e && e.name === "AbortError") {
+        throw new Error("診断がタイムアウトしました（2分）。通信環境をご確認のうえ、もう一度お試しください。");
+      }
+      throw e;
+    } finally {
+      clearTimeout(timer);
+      clearInterval(tick);
+    }
+  }
+
+  async function diagnose(inputId, btnId, resultId, statusId) {
+    const input = document.getElementById(inputId);
+    const btn = document.getElementById(btnId);
+    const statusEl = statusId ? document.getElementById(statusId) : null;
+    const resultEl = document.getElementById(resultId);
+    const url = normalizeUrlInput(input.value);
+    if (!url) {
+      input.focus();
+      return;
+    }
+    if (url !== (input.value || "").trim()) input.value = url;
+    btn.disabled = true;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="loading-dots">解析中</span>';
+    resultEl.innerHTML = "";
+    resultEl.classList.remove("show");
+    const started = Date.now();
+    const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+    setStatus("サイトを解析しています… 通常20〜60秒かかります。");
+    try {
+      const data = await postScore(url, () => {
+        const sec = Math.round((Date.now() - started) / 1000);
+        setStatus(`解析中… ${sec}秒経過（通常20〜60秒）`);
+      });
+      setStatus("");
+      renderResult(resultId, data);
+    } catch (e) {
+      setStatus("");
+      resultEl.innerHTML = `<div class="err-msg">${(e && e.message) || "エラーが発生しました。少し待ってからもう一度お試しください。"}</div>`;
+      resultEl.classList.add("show");
+      resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+
+  function kdLabel(kd) {
+    if (kd == null) return "—";
+    if (kd < 15) return "非常に簡単";
+    if (kd < 30) return "簡単";
+    if (kd < 50) return "普通";
+    if (kd < 70) return "難しい";
+    return "非常に難しい";
+  }
+
+  async function loadKeywords(url, targetId, btn) {
+    if (!url) return;
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = "検索中…";
+    try {
+      const res = await fetch("/api/keywords", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url, language: "ja" }),
+      });
+      const data = await res.json();
+      const el = document.getElementById(targetId);
+      if (!data.ok || !data.top_keywords || data.top_keywords.length === 0) {
+        el.innerHTML = `<div style="padding:12px;background:#fef3f2;border-radius:8px;font-size:13px;color:#b42318;">関連する検索キーワードが見つかりませんでした。</div>`;
+        btn.style.display = "none";
+        return;
+      }
+      const rows = data.top_keywords.map(k => {
+        const aiVol = (k.ai_search_volume == null) ? "—" : k.ai_search_volume.toLocaleString();
+        return `
+        <tr>
+          <td style="padding:8px 6px;font-size:13px;color:var(--text);">${k.keyword}</td>
+          <td style="padding:8px 6px;font-size:13px;text-align:right;color:#55e1dd;font-weight:600;">${aiVol}</td>
+          <td style="padding:8px 6px;font-size:13px;text-align:right;color:var(--text);">${(k.search_volume || 0).toLocaleString()}</td>
+          <td style="padding:8px 6px;font-size:12px;text-align:right;color:var(--text-mute);">${kdLabel(k.keyword_difficulty)}</td>
+        </tr>`;
+      }).join("");
+      const easy = data.easiest_win
+        ? `<p style="margin-top:10px;font-size:12px;color:var(--text-mute);">💡 一番狙いやすいキーワード：<b style="color:var(--text);">${data.easiest_win.keyword}</b>（月間 ${data.easiest_win.search_volume.toLocaleString()} 検索・${kdLabel(data.easiest_win.keyword_difficulty)}）</p>`
+        : "";
+      el.innerHTML = `
+        <div style="background:#0f1729;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;">
+          <h5 style="margin:0 0 10px;font-size:13px;color:var(--text-mute);font-weight:600;">🔍 関連キーワードの機会（DataForSEO）</h5>
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+              <th style="text-align:left;font-size:11px;color:var(--text-faint);padding:6px;font-weight:600;">キーワード</th>
+              <th style="text-align:right;font-size:11px;color:#55e1dd;padding:6px;font-weight:700;">AI検索数/月 ⭐</th>
+              <th style="text-align:right;font-size:11px;color:var(--text-faint);padding:6px;font-weight:600;">Google検索数/月</th>
+              <th style="text-align:right;font-size:11px;color:var(--text-faint);padding:6px;font-weight:600;">難易度</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+          ${easy}
+        </div>`;
+      btn.style.display = "none";
+    } catch (e) {
+      const el = document.getElementById(targetId);
+      el.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--text-faint);">キーワードデータの取得に失敗しました。</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  }
+
+  // Allow Enter to submit on URL inputs
+  document.querySelectorAll('input[type="text"][inputmode="url"]').forEach(inp => {
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const btnId = inp.id === "hero-url" ? "hero-btn" : (inp.id === "cta-url" ? "cta-btn" : null);
+        if (btnId) document.getElementById(btnId).click();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

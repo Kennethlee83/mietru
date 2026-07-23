@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<!-- PATCH-2026-05-21-MIETERU-LOGIN -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIミエテル — ログイン</title>
+<style>
+:root { --bg:#0b0b14; --card:#1a1a2a; --text:#e8e8f0; --muted:#9090a8;
+        --primary:#bc42ff; --accent:#14b4e6; --border:#2a2a3a; --danger:#ef4444; }
+html,body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",sans-serif; margin:0; padding:0; }
+.wrap { max-width:440px; margin:0 auto; padding:40px 16px 80px; }
+.header { display:flex; align-items:center; gap:10px; padding:12px 4px 24px; }
+.header .logo { width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,var(--primary),var(--accent)); display:grid; place-items:center; font-weight:800; color:#fff; }
+.header .title { font-weight:700; font-size:18px; } .header .sub { color:var(--muted); font-size:12px; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:24px; margin:14px 0; }
+h1 { font-size:22px; font-weight:800; margin:0 0 6px; }
+.sub { color:var(--muted); font-size:13px; margin:0 0 18px; }
+.label { display:block; font-size:12px; color:var(--muted); margin:14px 0 6px; }
+.input { width:100%; box-sizing:border-box; padding:12px 14px; background:#0d0d18; color:var(--text); border:1px solid var(--border); border-radius:10px; font-size:15px; }
+.input:focus { outline:none; border-color:var(--accent); }
+.cta { display:block; width:100%; padding:14px; border-radius:12px; border:none; cursor:pointer; font-weight:700; font-size:15px; text-align:center; text-decoration:none; box-sizing:border-box; }
+.cta-primary { background:linear-gradient(135deg,var(--primary),var(--accent)); color:#fff; margin-top:18px; }
+.cta-primary[disabled] { opacity:0.6; cursor:not-allowed; }
+.cta-secondary { background:transparent; color:var(--muted); border:1px solid var(--border); margin-top:10px; }
+.error-banner { background:rgba(239,68,68,0.15); border:1px solid var(--danger); color:#ffb4b4; padding:10px 12px; border-radius:8px; margin-top:12px; font-size:13px; display:none; }
+.note { color:var(--muted); font-size:12px; line-height:1.6; margin-top:16px; text-align:center; }
+.note a { color:var(--accent); text-decoration:none; }
+.spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:middle; margin-right:6px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">S</div>
+    <div>
+      <div class="title">AIミエテル — マイページ</div>
+      <div class="sub">by SEOAI</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h1>ログイン</h1>
+    <p class="sub">登録済みのメールアドレスとパスワードを入力してください。</p>
+    <form id="login-form" onsubmit="doLogin(event)">
+      <label class="label">メールアドレス</label>
+      <input id="email" class="input" type="email" required autocomplete="email" placeholder="you@example.com">
+      <label class="label">パスワード</label>
+      <input id="password" class="input" type="password" required autocomplete="current-password" placeholder="••••••••">
+      <button id="submit-btn" type="submit" class="cta cta-primary">🔑 ログイン</button>
+      <div id="error-banner" class="error-banner"></div>
+    </form>
+    <p class="note">
+      まだアカウントをお持ちでない方は<br>
+      <a href="/mieteru/demo">無料でAIミエテル度をチェック</a>
+    </p>
+  </div>
+
+  <a class="cta cta-secondary" href="/mieteru">トップに戻る</a>
+</div>
+
+<script>
+async function doLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById("submit-btn");
+  const err = document.getElementById("error-banner");
+  err.style.display = "none";
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>ログイン中...';
+  try {
+    const res = await fetch("/api/mieteru/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value,
+      }),
+    });
+    const data = await res.json();
+    if (data.ok && data.token) {
+      location.href = data.next_url || ("/mieteru/account?t=" + encodeURIComponent(data.token));
+      return;
+    }
+    throw new Error(data.error || "ログインできませんでした。");
+  } catch (e2) {
+    err.textContent = e2.message || "エラーが発生しました。";
+    err.style.display = "block";
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+}
+</script>
+</body>
+</html>
