@@ -136,19 +136,19 @@ textarea.input-text { resize:vertical; min-height:90px; }
       <input class="input-text" name="domain" placeholder="https://your-site.com">
     </div>
 
-    <section id="grow" class="grow-section" aria-label="AI名刺を育てる">
+    <section id="grow-ai-card" class="grow-section" aria-label="AI名刺を育てる">
       <h2>AI名刺を育てる</h2>
-      <p class="helper" style="margin-bottom:12px;">公開したあとに、少しずつ足せます。全部いりません。1つだけで大丈夫です。</p>
+      <p class="helper" style="margin-bottom:12px;">ページはすでに公開できます。ここに足すと、AIが店舗を引用しやすくなります。必須ではありません。</p>
 
       <div class="field-row">
-        <label for="maps_url">Googleマップのリンク</label>
-        <input class="input-text" id="maps_url" name="maps_url" inputmode="url" placeholder="https://maps.google.com/..." autocomplete="off">
-        <p class="helper">お店の地図ページのリンクを貼ってください。住所を長く書かなくても大丈夫です。</p>
+        <label for="google_maps_url">Googleマップのリンク</label>
+        <input class="input-text" id="google_maps_url" name="google_maps_url" inputmode="url" placeholder="https://maps.google.com/..." autocomplete="off">
+        <p class="helper">Googleマップで店舗を開き「共有」したURLを貼ってください。</p>
       </div>
       <div class="field-row">
-        <label for="gbp_url">Googleの店舗ページ（ビジネスプロフィール）</label>
-        <input class="input-text" id="gbp_url" name="gbp_url" inputmode="url" placeholder="https://" autocomplete="off">
-        <p class="helper">持っていればリンクを貼るだけです。なくても大丈夫です。</p>
+        <label for="gbp_place_id">Googleビジネスプロフィールの店舗ID（任意）</label>
+        <input class="input-text" id="gbp_place_id" name="gbp_place_id" placeholder="例）ChIJ…" autocomplete="off">
+        <p class="helper">マップのリンクがあれば、こちらは空欄で大丈夫です。</p>
       </div>
       <div class="field-row">
         <label for="logo_url">ロゴ</label>
@@ -292,68 +292,25 @@ function updateFaqAddButton() {
   btn.style.display = list.querySelectorAll(".faq-row").length >= 5 ? "none" : "inline-block";
 }
 
-function collectGrow() {
+function collectFaqItems() {
   const faqs = [];
   document.querySelectorAll("#faq-list .faq-row").forEach(function (row) {
     const q = row.querySelector(".faq-q").value.trim();
     const a = row.querySelector(".faq-a").value.trim();
-    if (q || a) faqs.push({ q: q, a: a });
+    if (q || a) faqs.push({ question: q, answer: a });
   });
-  const same = {};
-  SNS_KEYS.forEach(function (key) { same[key] = fieldValue("sns_" + key); });
-  return {
-    maps_url: fieldValue("maps_url"),
-    gbp_url: fieldValue("gbp_url"),
-    logo_url: fieldValue("logo_url"),
-    same_as: same,
-    faqs: faqs,
-  };
+  return faqs;
 }
 
-function fillGrow(grow) {
-  const g = grow || {};
-  setField("maps_url", g.maps_url);
-  setField("gbp_url", g.gbp_url);
-  setField("logo_url", g.logo_url);
-  const same = g.same_as || {};
-  if (Array.isArray(same)) {
-    SNS_KEYS.forEach(function (key, i) { setField("sns_" + key, same[i] || ""); });
-  } else {
-    SNS_KEYS.forEach(function (key) {
-      const twitter = key === "x" ? same.twitter : "";
-      setField("sns_" + key, same[key] || twitter || "");
-    });
-  }
-  const faqs = Array.isArray(g.faqs) ? g.faqs : [];
-  const wanted = Math.max(2, Math.min(5, faqs.length || 2));
-  while (document.querySelectorAll("#faq-list .faq-row").length < wanted) addFaqRow("", "");
-  document.querySelectorAll("#faq-list .faq-row").forEach(function (row, i) {
-    const item = faqs[i] || {};
-    row.querySelector(".faq-q").value = item.q || item.question || "";
-    row.querySelector(".faq-a").value = item.a || item.answer || "";
-  });
-  updateFaqAddButton();
-}
-
-function mergedGrow(page) {
-  let draft = null;
-  try {
-    draft = JSON.parse(sessionStorage.getItem("mieteru_grow_draft_" + (window.CLIENT_ID || "")) || "null");
-  } catch (_) {}
-  const source = {};
-  ["maps_url", "gbp_url", "logo_url", "same_as", "faqs"].forEach(function (key) {
-    if (page && Object.prototype.hasOwnProperty.call(page, key)) source[key] = page[key];
-    else if (page && page.grow && Object.prototype.hasOwnProperty.call(page.grow, key)) source[key] = page.grow[key];
-    else if (draft && Object.prototype.hasOwnProperty.call(draft, key)) source[key] = draft[key];
-  });
-  return source;
+function collectSocialUrls() {
+  return SNS_KEYS.map(function (key) { return fieldValue("sns_" + key); }).filter(Boolean);
 }
 
 function readCoreProfile() {
   const otherEl = document.getElementById("industry_other");
   const selEl = document.getElementById("industry_select");
   const industry = (otherEl.style.display !== "none" ? otherEl.value : selEl.value) || "";
-  return {
+  const profile = {
     name: document.querySelector('input[name="name"]').value,
     industry: industry === "__other__" ? "" : industry,
     location: document.querySelector('input[name="location"]').value,
@@ -362,28 +319,93 @@ function readCoreProfile() {
     hours: document.getElementById("hours-output").value,
     keywords: document.querySelector('input[name="keywords"]').value,
     domain: document.querySelector('input[name="domain"]').value,
-    grow: collectGrow(),
+    google_maps_url: fieldValue("google_maps_url"),
+    gbp_place_id: fieldValue("gbp_place_id"),
+    logo_url: fieldValue("logo_url"),
+    social_links: window.MieteruGrow ? window.MieteruGrow.buildSocialLinks(collectSocialUrls()) : "",
+    faq_json: window.MieteruGrow ? window.MieteruGrow.buildFaqJson(collectFaqItems()) : "",
   };
+  return profile;
+}
+
+function profileForSave(profile) {
+  const out = Object.assign({}, profile);
+  ["google_maps_url", "gbp_place_id", "logo_url", "social_links", "faq_json"].forEach(function (key) {
+    if (!out[key]) delete out[key];
+  });
+  if (/[丁目番地号]|〒|\d/.test(String(out.location || ""))) out.street_address = out.location;
+  return out;
+}
+
+function withGrowDraft(page) {
+  let draft = null;
+  try {
+    draft = JSON.parse(sessionStorage.getItem("mieteru_grow_draft_" + (window.CLIENT_ID || "")) || "null");
+  } catch (_) {}
+  const out = Object.assign({}, page || {});
+  ["google_maps_url", "gbp_place_id", "logo_url", "social_links", "faq_json"].forEach(function (key) {
+    if (!Object.prototype.hasOwnProperty.call(out, key) && draft && draft[key]) out[key] = draft[key];
+  });
+  return out;
+}
+
+function fillGrow(page) {
+  const p = page || {};
+  setField("google_maps_url", p.google_maps_url);
+  setField("gbp_place_id", p.gbp_place_id);
+  setField("logo_url", p.logo_url);
+  let urls = [];
+  if (window.MieteruGrow && p.social_links) {
+    try {
+      const obj = typeof p.social_links === "string" ? JSON.parse(p.social_links) : p.social_links;
+      if (obj && typeof obj === "object") {
+        if (obj.instagram) urls.push(obj.instagram);
+        if (obj.facebook) urls.push(obj.facebook);
+        if (obj.twitter) urls.push(obj.twitter);
+        if (obj.youtube) urls.push(obj.youtube);
+        (obj.other_urls || []).forEach(function (item) { if (item && item.url) urls.push(item.url); });
+      }
+    } catch (_) {}
+  }
+  setField("sns_instagram", urls[0] || "");
+  setField("sns_facebook", urls[1] || "");
+  setField("sns_x", urls[2] || "");
+  setField("sns_line", urls[3] || "");
+  setField("sns_youtube", urls[4] || "");
+  let faqs = [];
+  try {
+    const parsed = typeof p.faq_json === "string" ? JSON.parse(p.faq_json || "[]") : (p.faq_json || []);
+    if (Array.isArray(parsed)) faqs = parsed;
+  } catch (_) {}
+  const wanted = Math.max(2, Math.min(5, faqs.length || 2));
+  while (document.querySelectorAll("#faq-list .faq-row").length < wanted) addFaqRow("", "");
+  document.querySelectorAll("#faq-list .faq-row").forEach(function (row, i) {
+    const item = faqs[i] || {};
+    row.querySelector(".faq-q").value = item.question || item.q || "";
+    row.querySelector(".faq-a").value = item.answer || item.a || "";
+  });
+  updateFaqAddButton();
 }
 
 function refreshGrowWidget() {
   const mount = document.getElementById("grow-widget-mount");
   if (!mount || !window.MieteruGrow) return;
   mount.innerHTML = window.MieteruGrow.renderWidget(readCoreProfile(), {
-    ctaHref: "#grow",
+    ctaHref: "#grow-ai-card",
     ctaLabel: "1つ足してみる",
   });
 }
 
 function focusGrowSection() {
   const params = new URLSearchParams(location.search);
-  if (location.hash !== "#grow" && params.get("focus") !== "grow") return;
-  const el = document.getElementById("grow");
+  const want = params.get("grow") === "1" || location.hash === "#grow-ai-card" || location.hash === "#grow" || params.get("focus") === "grow";
+  if (!want) return;
+  const el = document.getElementById("grow-ai-card");
   if (!el) return;
   el.classList.add("grow-focus");
   setTimeout(function () {
     el.scrollIntoView({ behavior: "smooth", block: "start" });
-    const first = document.getElementById("maps_url");
+    const first = document.getElementById("google_maps_url");
     if (first) first.focus({ preventScroll: true });
   }, 60);
 }
@@ -441,7 +463,7 @@ function applyLoadedPage(p) {
   document.querySelector('input[name="domain"]').value = page.domain || "";
   document.getElementById("summary").value = page.summary || "";
   setIndustryFromText(page.industry || "");
-  fillGrow(mergedGrow(page));
+  fillGrow(withGrowDraft(page));
   if (page.public_url) {
     document.getElementById("public-url-line").innerHTML =
       '現在の公開URL: <a href="' + page.public_url + '" target="_blank" rel="noopener" style="color:#14b4e6">' +
@@ -624,18 +646,26 @@ async function saveEdits(e) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    const profile = readCoreProfile();
+    const profile = profileForSave(readCoreProfile());
     let data = await postProfileUpdate(profile);
     let growDeferred = false;
-    if ((!data || !data.ok) && profile.grow && looksLikeUnknownField(data && data.error)) {
+    const growKeys = ["google_maps_url", "gbp_place_id", "street_address", "social_links", "logo_url", "faq_json"];
+    const sentGrow = growKeys.some(function (key) { return Object.prototype.hasOwnProperty.call(profile, key); });
+    if ((!data || !data.ok) && sentGrow && looksLikeUnknownField(data && data.error)) {
       const core = Object.assign({}, profile);
-      delete core.grow;
+      growKeys.forEach(function (key) { delete core[key]; });
       data = await postProfileUpdate(core);
       growDeferred = !!(data && data.ok);
     }
     if (data && data.ok) {
       try {
-        sessionStorage.setItem("mieteru_grow_draft_" + window.CLIENT_ID, JSON.stringify(profile.grow));
+        sessionStorage.setItem("mieteru_grow_draft_" + window.CLIENT_ID, JSON.stringify({
+          google_maps_url: profile.google_maps_url || "",
+          gbp_place_id: profile.gbp_place_id || "",
+          logo_url: profile.logo_url || "",
+          social_links: profile.social_links || "",
+          faq_json: profile.faq_json || "",
+        }));
       } catch (_) {}
       banner.innerHTML = growDeferred
         ? "✅ 基本情報は保存しました。地図・SNS・ロゴ・質問は、この画面に残してあります。"

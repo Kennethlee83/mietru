@@ -86,10 +86,10 @@ function renderAccount(data, token, preview) {
   const first = pages[0];
   let trialHref = "";
   if (preview) {
-    trialHref = "/mieteru/edit?grow_preview=1&focus=grow#grow";
+    trialHref = "/mieteru/edit?grow_preview=1&grow=1#grow-ai-card";
   } else if (first && token) {
     trialHref = "/mieteru/edit?t=" + encodeURIComponent(token) +
-      "&c=" + encodeURIComponent(first.client_id) + "&focus=grow#grow";
+      "&c=" + encodeURIComponent(first.client_id) + "&grow=1#grow-ai-card";
   }
   const trial = document.getElementById("trial-banner");
   if (trial && window.MieteruGrow) {
@@ -114,8 +114,8 @@ function renderAccount(data, token, preview) {
       ? "/mieteru/edit?grow_preview=1"
       : "/mieteru/edit?t=" + encodeURIComponent(token) + "&c=" + encodeURIComponent(p.client_id);
     const growHref = preview
-      ? "/mieteru/edit?grow_preview=1&focus=grow#grow"
-      : editHref + "&focus=grow#grow";
+      ? "/mieteru/edit?grow_preview=1&grow=1#grow-ai-card"
+      : editHref + "&grow=1#grow-ai-card";
     const editBtn = '<a class="btn" href="' + editHref + '">✏ 編集</a>';
     const meta = [p.industry, p.location].filter(Boolean).join(" · ");
     const growHtml = window.MieteruGrow
@@ -143,11 +143,10 @@ function renderAccount(data, token, preview) {
   if (params.get("grow_preview") === "1" && !token) {
     document.getElementById("preview-note").style.display = "block";
     document.getElementById("add-page-btn").href = "/mieteru/demo";
-    const end = new Date(Date.now() + 5 * 86400000).toISOString();
     renderAccount({
       ok: true,
       email: "preview@example.com",
-      trial_ends_at: end,
+      plan: { days_left: 5, paid: false },
       pages: [{
         client_id: "preview",
         name: "横浜みなと歯科",
@@ -155,11 +154,10 @@ function renderAccount(data, token, preview) {
         location: "横浜市中区",
         is_public: true,
         public_url: "https://seoai.space/p/preview",
-        summary: "横浜市中区でインプラントと予防歯科を行うクリニックです。",
+        domain: "https://example.com",
         phone: "045-000-0000",
         hours: "月-金 9:00-18:00",
-        keywords: "横浜, 歯科, インプラント",
-        domain: "https://example.com",
+        completeness_pct: 38,
       }],
     }, "", true);
     return;
