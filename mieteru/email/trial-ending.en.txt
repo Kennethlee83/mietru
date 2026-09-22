@@ -1,0 +1,17 @@
+Subject: About a week left in your free trial
+
+Hi {{name}},
+
+Your Mieteru free trial runs until about {{trial_end_date}}.
+
+Before then, growing the card a little helps AI keep introducing you in month two.
+A map link, or one social link, is enough.
+
+Grow your card:
+{{edit_url}}
+
+You can keep the page, or stop it from your account page.
+Stopping during the trial does not create a charge.
+
+---
+Mieteru / SEOAI

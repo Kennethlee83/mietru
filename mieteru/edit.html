@@ -39,6 +39,7 @@ textarea.input-text { resize:vertical; min-height:90px; }
 .btn-primary { display:block; width:100%; padding:14px 20px; background:var(--grad); color:#fff; border-radius:12px; font-weight:700; font-size:15px; box-shadow:0 6px 20px rgba(74,140,255,0.35); }
 .btn-primary[disabled] { opacity:0.6; cursor:not-allowed; }
 .btn-ghost { display:inline-block; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; color:var(--text-mute); }
+.btn-ghost[disabled] { opacity:0.45; cursor:not-allowed; }
 .success-banner { background:rgba(74,222,128,0.12); border:1px solid var(--good); color:#a6efbe; padding:12px 14px; border-radius:10px; margin-bottom:16px; font-size:14px; display:none; }
 .error-banner { background:rgba(255,107,139,0.12); border:1px solid var(--danger); color:#ffb3c1; padding:10px 14px; border-radius:8px; margin-top:12px; font-size:13px; }
 .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:middle; margin-right:6px; }
@@ -61,6 +62,7 @@ textarea.input-text { resize:vertical; min-height:90px; }
 <main>
   <h1>ページを編集</h1>
   <p class="sub">変更内容は保存と同時に公開ページに反映されます。</p>
+  <p id="preview-note" class="sub" style="display:none;">表示確認用です。この画面では保存も公開停止も行いません。</p>
 
   <div id="success-banner" class="success-banner"></div>
   <div id="loading-card" class="card" style="text-align:center; color:var(--text-mute);">
@@ -68,6 +70,8 @@ textarea.input-text { resize:vertical; min-height:90px; }
   </div>
 
   <form id="edit-form" class="card" style="display:none;" onsubmit="saveEdits(event)">
+    <!-- PATCH-2026-09-22-MIETERU-GROW -->
+    <div id="grow-widget-mount"></div>
     <div class="field-row">
       <label>ビジネス名</label>
       <input class="input-text" name="name" required>
@@ -132,6 +136,53 @@ textarea.input-text { resize:vertical; min-height:90px; }
       <input class="input-text" name="domain" placeholder="https://your-site.com">
     </div>
 
+    <section id="grow-ai-card" class="grow-section" aria-label="AI名刺を育てる">
+      <h2>AI名刺を育てる</h2>
+      <p class="helper" style="margin-bottom:12px;">ページはすでに公開できます。ここに足すと、AIが店舗を引用しやすくなります。必須ではありません。</p>
+
+      <div class="field-row">
+        <label for="google_maps_url">Googleマップのリンク</label>
+        <input class="input-text" id="google_maps_url" name="google_maps_url" inputmode="url" placeholder="https://maps.google.com/..." autocomplete="off">
+        <p class="helper">Googleマップで店舗を開き「共有」したURLを貼ってください。</p>
+      </div>
+      <div class="field-row">
+        <label for="gbp_place_id">Googleビジネスプロフィールの店舗ID（任意）</label>
+        <input class="input-text" id="gbp_place_id" name="gbp_place_id" placeholder="例）ChIJ…" autocomplete="off">
+        <p class="helper">マップのリンクがあれば、こちらは空欄で大丈夫です。</p>
+      </div>
+      <div class="field-row">
+        <label for="logo_url">ロゴ</label>
+        <input class="input-text" id="logo_url" name="logo_url" inputmode="url" placeholder="https://example.com/logo.png" autocomplete="off">
+        <p class="helper">ロゴ画像のURLを貼ってください。あとからでも追加できます。</p>
+      </div>
+      <div class="field-row">
+        <label>SNSのリンク</label>
+        <p class="helper" style="margin-bottom:8px;">使っているもので大丈夫です。空欄のままでも公開は続きます。</p>
+        <div class="grid-2">
+          <input class="input-text" id="sns_instagram" name="sns_instagram" placeholder="Instagram" autocomplete="off">
+          <input class="input-text" id="sns_facebook" name="sns_facebook" placeholder="Facebook" autocomplete="off">
+          <input class="input-text" id="sns_x" name="sns_x" placeholder="X" autocomplete="off">
+          <input class="input-text" id="sns_line" name="sns_line" placeholder="LINE" autocomplete="off">
+          <input class="input-text" id="sns_youtube" name="sns_youtube" placeholder="YouTube" autocomplete="off">
+        </div>
+      </div>
+      <div class="field-row">
+        <label>よくある質問</label>
+        <p class="helper" style="margin-bottom:8px;">お客さまから聞かれそうなことを、1つ書くだけで大丈夫です。</p>
+        <div id="faq-list">
+          <div class="faq-row" style="margin-bottom:10px;">
+            <input class="input-text faq-q" placeholder="例）駐車場はありますか？">
+            <textarea class="input-text faq-a" rows="2" placeholder="例）店舗の裏に3台分あります。" style="margin-top:6px;"></textarea>
+          </div>
+          <div class="faq-row" style="margin-bottom:10px;">
+            <input class="input-text faq-q" placeholder="例）予約は必要ですか？">
+            <textarea class="input-text faq-a" rows="2" placeholder="例）初めての方は予約がおすすめです。" style="margin-top:6px;"></textarea>
+          </div>
+        </div>
+        <button type="button" class="btn-ghost" id="faq-add">＋ 質問を追加</button>
+      </div>
+    </section>
+
     <button id="save-btn" type="submit" class="btn-primary">💾 保存して公開を更新</button>
     <div id="error-msg"></div>
     <p class="helper" id="public-url-line" style="margin-top:12px; text-align:center;"></p>
@@ -142,6 +193,7 @@ textarea.input-text { resize:vertical; min-height:90px; }
   </form>
 </main>
 
+<script src="/mieteru/js/grow-card.js"></script>
 <script>
 // PATCH-2026-05-22-MIETERU-HOURS: weekly hours picker (same as demo).
 const HOURS_DAYS = [
@@ -205,10 +257,251 @@ function setHoursFromFreeText(text) {
   if (prev) prev.textContent = text || "— 未設定 —";
 }
 
+// PATCH-2026-09-22-MIETERU-GROW
+const SNS_KEYS = ["instagram", "facebook", "x", "line", "youtube"];
+
+function fieldValue(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : "";
+}
+
+function setField(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value || "";
+}
+
+function addFaqRow(q, a) {
+  const list = document.getElementById("faq-list");
+  if (!list || list.querySelectorAll(".faq-row").length >= 5) return;
+  const row = document.createElement("div");
+  row.className = "faq-row";
+  row.style.marginBottom = "10px";
+  row.innerHTML =
+    '<input class="input-text faq-q" placeholder="例）駐車場はありますか？">' +
+    '<textarea class="input-text faq-a" rows="2" placeholder="例）店舗の裏に3台分あります。" style="margin-top:6px;"></textarea>';
+  row.querySelector(".faq-q").value = q || "";
+  row.querySelector(".faq-a").value = a || "";
+  list.appendChild(row);
+  updateFaqAddButton();
+}
+
+function updateFaqAddButton() {
+  const btn = document.getElementById("faq-add");
+  const list = document.getElementById("faq-list");
+  if (!btn || !list) return;
+  btn.style.display = list.querySelectorAll(".faq-row").length >= 5 ? "none" : "inline-block";
+}
+
+function collectFaqItems() {
+  const faqs = [];
+  document.querySelectorAll("#faq-list .faq-row").forEach(function (row) {
+    const q = row.querySelector(".faq-q").value.trim();
+    const a = row.querySelector(".faq-a").value.trim();
+    if (q || a) faqs.push({ question: q, answer: a });
+  });
+  return faqs;
+}
+
+function collectSocialUrls() {
+  return SNS_KEYS.map(function (key) { return fieldValue("sns_" + key); }).filter(Boolean);
+}
+
+function readCoreProfile() {
+  const otherEl = document.getElementById("industry_other");
+  const selEl = document.getElementById("industry_select");
+  const industry = (otherEl.style.display !== "none" ? otherEl.value : selEl.value) || "";
+  const profile = {
+    name: document.querySelector('input[name="name"]').value,
+    industry: industry === "__other__" ? "" : industry,
+    location: document.querySelector('input[name="location"]').value,
+    summary: document.getElementById("summary").value,
+    phone: document.querySelector('input[name="phone"]').value,
+    hours: document.getElementById("hours-output").value,
+    keywords: document.querySelector('input[name="keywords"]').value,
+    domain: document.querySelector('input[name="domain"]').value,
+    google_maps_url: fieldValue("google_maps_url"),
+    gbp_place_id: fieldValue("gbp_place_id"),
+    logo_url: fieldValue("logo_url"),
+    social_links: window.MieteruGrow ? window.MieteruGrow.buildSocialLinks(collectSocialUrls()) : "",
+    faq_json: window.MieteruGrow ? window.MieteruGrow.buildFaqJson(collectFaqItems()) : "",
+  };
+  return profile;
+}
+
+function profileForSave(profile) {
+  const out = Object.assign({}, profile);
+  ["google_maps_url", "gbp_place_id", "logo_url", "social_links", "faq_json"].forEach(function (key) {
+    if (!out[key]) delete out[key];
+  });
+  if (/[丁目番地号]|〒|\d/.test(String(out.location || ""))) out.street_address = out.location;
+  return out;
+}
+
+function withGrowDraft(page) {
+  let draft = null;
+  try {
+    draft = JSON.parse(sessionStorage.getItem("mieteru_grow_draft_" + (window.CLIENT_ID || "")) || "null");
+  } catch (_) {}
+  const out = Object.assign({}, page || {});
+  ["google_maps_url", "gbp_place_id", "logo_url", "social_links", "faq_json"].forEach(function (key) {
+    if (!Object.prototype.hasOwnProperty.call(out, key) && draft && draft[key]) out[key] = draft[key];
+  });
+  return out;
+}
+
+function fillGrow(page) {
+  const p = page || {};
+  setField("google_maps_url", p.google_maps_url);
+  setField("gbp_place_id", p.gbp_place_id);
+  setField("logo_url", p.logo_url);
+  let urls = [];
+  if (window.MieteruGrow && p.social_links) {
+    try {
+      const obj = typeof p.social_links === "string" ? JSON.parse(p.social_links) : p.social_links;
+      if (obj && typeof obj === "object") {
+        if (obj.instagram) urls.push(obj.instagram);
+        if (obj.facebook) urls.push(obj.facebook);
+        if (obj.twitter) urls.push(obj.twitter);
+        if (obj.youtube) urls.push(obj.youtube);
+        (obj.other_urls || []).forEach(function (item) { if (item && item.url) urls.push(item.url); });
+      }
+    } catch (_) {}
+  }
+  setField("sns_instagram", urls[0] || "");
+  setField("sns_facebook", urls[1] || "");
+  setField("sns_x", urls[2] || "");
+  setField("sns_line", urls[3] || "");
+  setField("sns_youtube", urls[4] || "");
+  let faqs = [];
+  try {
+    const parsed = typeof p.faq_json === "string" ? JSON.parse(p.faq_json || "[]") : (p.faq_json || []);
+    if (Array.isArray(parsed)) faqs = parsed;
+  } catch (_) {}
+  const wanted = Math.max(2, Math.min(5, faqs.length || 2));
+  while (document.querySelectorAll("#faq-list .faq-row").length < wanted) addFaqRow("", "");
+  document.querySelectorAll("#faq-list .faq-row").forEach(function (row, i) {
+    const item = faqs[i] || {};
+    row.querySelector(".faq-q").value = item.question || item.q || "";
+    row.querySelector(".faq-a").value = item.answer || item.a || "";
+  });
+  updateFaqAddButton();
+}
+
+function refreshGrowWidget() {
+  const mount = document.getElementById("grow-widget-mount");
+  if (!mount || !window.MieteruGrow) return;
+  mount.innerHTML = window.MieteruGrow.renderWidget(readCoreProfile(), {
+    ctaHref: "#grow-ai-card",
+    ctaLabel: "1つ足してみる",
+  });
+}
+
+function focusGrowSection() {
+  const params = new URLSearchParams(location.search);
+  const want = params.get("grow") === "1" || location.hash === "#grow-ai-card" || location.hash === "#grow" || params.get("focus") === "grow";
+  if (!want) return;
+  const el = document.getElementById("grow-ai-card");
+  if (!el) return;
+  el.classList.add("grow-focus");
+  setTimeout(function () {
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    const first = document.getElementById("google_maps_url");
+    if (first) first.focus({ preventScroll: true });
+  }, 60);
+}
+
+function bindGrowUi() {
+  if (window.__growBound) return;
+  window.__growBound = true;
+  const form = document.getElementById("edit-form");
+  form.addEventListener("input", refreshGrowWidget);
+  form.addEventListener("change", refreshGrowWidget);
+  const add = document.getElementById("faq-add");
+  if (add) add.addEventListener("click", function () {
+    addFaqRow("", "");
+    refreshGrowWidget();
+  });
+  window.addEventListener("hashchange", focusGrowSection);
+}
+
+function bindHoursToggle() {
+  const tog = document.getElementById("hours-toggle-freetext");
+  if (!tog || tog.dataset.bound === "1") return;
+  tog.dataset.bound = "1";
+  tog.addEventListener("click", function (e) {
+    e.preventDefault();
+    const picker = document.getElementById("hours-picker");
+    const ft = document.getElementById("hours-freetext");
+    if (ft.style.display === "none") {
+      ft.style.display = "block"; picker.style.display = "none";
+      tog.textContent = "📅 曜日ごとに設定に戻す";
+      ft.addEventListener("input", function () { document.getElementById("hours-output").value = ft.value; });
+    } else {
+      ft.style.display = "none"; picker.style.display = "block";
+      tog.textContent = "📝 自由入力に切り替える";
+      updateHoursOutput();
+    }
+    refreshGrowWidget();
+  });
+}
+
+function applyLoadedPage(p) {
+  const page = p || {};
+  document.getElementById("edit-form").style.display = "block";
+  buildHoursPicker();
+  document.querySelector('input[name="name"]').value = page.name || "";
+  document.querySelector('input[name="location"]').value = page.location || "";
+  document.querySelector('input[name="phone"]').value = page.phone || "";
+  if (page.hours) {
+    document.getElementById("hours-freetext").style.display = "block";
+    document.getElementById("hours-picker").style.display = "none";
+    const tog = document.getElementById("hours-toggle-freetext");
+    if (tog) tog.textContent = "📅 曜日ごとに設定に戻す";
+    setHoursFromFreeText(page.hours);
+  }
+  document.querySelector('input[name="keywords"]').value = page.keywords || "";
+  document.querySelector('input[name="domain"]').value = page.domain || "";
+  document.getElementById("summary").value = page.summary || "";
+  setIndustryFromText(page.industry || "");
+  fillGrow(withGrowDraft(page));
+  if (page.public_url) {
+    document.getElementById("public-url-line").innerHTML =
+      '現在の公開URL: <a href="' + page.public_url + '" target="_blank" rel="noopener" style="color:#14b4e6">' +
+      page.public_url + '</a>';
+  }
+  bindHoursToggle();
+  bindGrowUi();
+  refreshGrowWidget();
+  focusGrowSection();
+}
+
 (function () {
   const params = new URLSearchParams(location.search);
   const token = params.get("t") || "";
   const clientId = params.get("c") || "";
+  if (params.get("grow_preview") === "1" && !token) {
+    window.GROW_PREVIEW = true;
+    window.TOKEN = "";
+    window.CLIENT_ID = "preview";
+    document.getElementById("back-link").href = "/mieteru/account?grow_preview=1";
+    document.getElementById("loading-card").style.display = "none";
+    document.getElementById("preview-note").style.display = "block";
+    const unpublish = document.getElementById("unpublish-btn");
+    unpublish.disabled = true;
+    unpublish.textContent = "公開停止は、この確認画面では使えません";
+    applyLoadedPage({
+      name: "横浜みなと歯科",
+      industry: "歯科・医院",
+      location: "横浜市中区",
+      summary: "横浜市中区でインプラントと予防歯科を行うクリニックです。",
+      phone: "045-000-0000",
+      hours: "月-金 9:00-18:00 / 土 9:00-13:00 / 日 休業",
+      keywords: "横浜, 歯科, インプラント",
+      domain: "https://example.com",
+      public_url: "https://seoai.space/p/preview",
+    });
+    return;
+  }
   if (!token || !clientId) { location.href = "/mieteru/login"; return; }
   document.getElementById("back-link").href = "/mieteru/account?t=" + encodeURIComponent(token);
   window.TOKEN = token;
@@ -227,43 +520,7 @@ function setHoursFromFreeText(text) {
         alert(data.error || "ページを読み込めませんでした。");
         return;
       }
-      const p = data.page;
-      document.getElementById("edit-form").style.display = "block";
-      buildHoursPicker();
-      document.querySelector('input[name="name"]').value = p.name || "";
-      document.querySelector('input[name="location"]').value = p.location || "";
-      document.querySelector('input[name="phone"]').value = p.phone || "";
-      if (p.hours) {
-        document.getElementById("hours-freetext").style.display = "block";
-        document.getElementById("hours-picker").style.display = "none";
-        const tog = document.getElementById("hours-toggle-freetext");
-        if (tog) tog.textContent = "📅 曜日ごとに設定に戻す";
-        setHoursFromFreeText(p.hours);
-      }
-      document.querySelector('input[name="keywords"]').value = p.keywords || "";
-      document.querySelector('input[name="domain"]').value = p.domain || "";
-      document.getElementById("summary").value = p.summary || "";
-      setIndustryFromText(p.industry || "");
-      if (p.public_url) {
-        document.getElementById("public-url-line").innerHTML =
-          '現在の公開URL: <a href="' + p.public_url + '" target="_blank" rel="noopener" style="color:#14b4e6">' +
-          p.public_url + '</a>';
-      }
-      const tog = document.getElementById("hours-toggle-freetext");
-      if (tog) tog.addEventListener("click", function (e) {
-        e.preventDefault();
-        const picker = document.getElementById("hours-picker");
-        const ft = document.getElementById("hours-freetext");
-        if (ft.style.display === "none") {
-          ft.style.display = "block"; picker.style.display = "none";
-          tog.textContent = "📅 曜日ごとに設定に戻す";
-          ft.addEventListener("input", function () { document.getElementById("hours-output").value = ft.value; });
-        } else {
-          ft.style.display = "none"; picker.style.display = "block";
-          tog.textContent = "📝 自由入力に切り替える";
-          updateHoursOutput();
-        }
-      });
+      applyLoadedPage(data.page);
     })
     .catch(() => {
       document.getElementById("loading-card").innerHTML =
@@ -329,6 +586,7 @@ async function generateSummary() {
 }
 
 async function unpublishPage() {
+  if (window.GROW_PREVIEW) return;
   if (!confirm("このページの公開を停止しますか？\n\n公開URL（seoai.space/p/...）が見えなくなります。\n後で再び編集して保存すれば再公開できます。")) return;
   const btn = document.getElementById("unpublish-btn");
   const orig = btn.innerHTML;
@@ -357,6 +615,19 @@ async function unpublishPage() {
   }
 }
 
+function looksLikeUnknownField(error) {
+  return /additional|unexpected|unknown field|not permitted|extra propert/i.test(error || "");
+}
+
+async function postProfileUpdate(profile) {
+  const res = await fetch("/api/mieteru/page/update", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: window.TOKEN, client_id: window.CLIENT_ID, profile: profile }),
+  });
+  return res.json();
+}
+
 async function saveEdits(e) {
   e.preventDefault();
   const btn = document.getElementById("save-btn");
@@ -368,32 +639,43 @@ async function saveEdits(e) {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>保存中...';
   try {
-    const otherEl = document.getElementById("industry_other");
-    const selEl = document.getElementById("industry_select");
-    const industry = (otherEl.style.display !== "none" ? otherEl.value : selEl.value) || "";
-    const profile = {
-      name: document.querySelector('input[name="name"]').value,
-      industry: industry === "__other__" ? "" : industry,
-      location: document.querySelector('input[name="location"]').value,
-      summary: document.getElementById("summary").value,
-      phone: document.querySelector('input[name="phone"]').value,
-      hours: document.getElementById("hours-output").value,
-      keywords: document.querySelector('input[name="keywords"]').value,
-      domain: document.querySelector('input[name="domain"]').value,
-    };
-    const res = await fetch("/api/mieteru/page/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: window.TOKEN, client_id: window.CLIENT_ID, profile: profile }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      banner.innerHTML = '✅ 保存しました。公開ページに反映されています。<br>' +
-        (data.public_url ? '<a href="' + data.public_url + '" target="_blank" style="color:#a6efbe">' + data.public_url + '</a>' : '');
+    if (window.GROW_PREVIEW) {
+      refreshGrowWidget();
+      banner.textContent = "表示確認用です。この画面では保存しません。";
       banner.style.display = "block";
       window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const profile = profileForSave(readCoreProfile());
+    let data = await postProfileUpdate(profile);
+    let growDeferred = false;
+    const growKeys = ["google_maps_url", "gbp_place_id", "street_address", "social_links", "logo_url", "faq_json"];
+    const sentGrow = growKeys.some(function (key) { return Object.prototype.hasOwnProperty.call(profile, key); });
+    if ((!data || !data.ok) && sentGrow && looksLikeUnknownField(data && data.error)) {
+      const core = Object.assign({}, profile);
+      growKeys.forEach(function (key) { delete core[key]; });
+      data = await postProfileUpdate(core);
+      growDeferred = !!(data && data.ok);
+    }
+    if (data && data.ok) {
+      try {
+        sessionStorage.setItem("mieteru_grow_draft_" + window.CLIENT_ID, JSON.stringify({
+          google_maps_url: profile.google_maps_url || "",
+          gbp_place_id: profile.gbp_place_id || "",
+          logo_url: profile.logo_url || "",
+          social_links: profile.social_links || "",
+          faq_json: profile.faq_json || "",
+        }));
+      } catch (_) {}
+      banner.innerHTML = growDeferred
+        ? "✅ 基本情報は保存しました。地図・SNS・ロゴ・質問は、この画面に残してあります。"
+        : ('✅ 保存しました。公開ページに反映されています。<br>' +
+          (data.public_url ? '<a href="' + data.public_url + '" target="_blank" style="color:#a6efbe">' + data.public_url + '</a>' : ""));
+      banner.style.display = "block";
+      refreshGrowWidget();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
-      throw new Error(data.error || "保存できませんでした。");
+      throw new Error((data && data.error) || "保存できませんでした。");
     }
   } catch (err) {
     errBox.innerHTML = '<div class="error-banner">' + (err.message || "エラーが発生しました。") + '</div>';
