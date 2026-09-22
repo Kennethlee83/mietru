@@ -1,0 +1,23 @@
+Subject: Grow your AI business card a little further
+
+Hi {{name}},
+
+Your Mieteru page is already published.
+AI can find it as it is.
+
+If you have a minute, you can add any of these. Nothing complicated — a link, or one question you often hear.
+
+- Google Maps (so AI can point people to your place)
+- A social link (Instagram, LINE, or whichever you already use)
+- Your logo
+- One frequently asked question
+
+A sense of how far the card has grown: {{pct}}%
+
+Grow your AI card:
+{{edit_url}}
+
+There is no rush. Adding one thing when you have time already helps.
+
+---
+Mieteru / SEOAI

@@ -49,6 +49,8 @@ h1 { font-size:22px; font-weight:800; margin:6px 0 4px; }
   <h1>あなたのページ一覧</h1>
   <p class="subtitle">作成したAIミエテルページを管理できます。</p>
   <div class="email-line" id="email-line">…</div>
+  <p id="preview-note" class="subtitle" style="display:none;">表示確認用です。この一覧はサンプルです。</p>
+  <div id="trial-banner"></div>
 
   <div id="loading" class="card">
     <div style="text-align:center;color:var(--muted);font-size:14px">
@@ -62,10 +64,106 @@ h1 { font-size:22px; font-weight:800; margin:6px 0 4px; }
   <a class="cta cta-secondary" href="/mieteru">トップに戻る</a>
 </div>
 
+<script src="/mieteru/js/grow-card.js"></script>
 <script>
+function renderAccount(data, token, preview) {
+  document.getElementById("loading").style.display = "none";
+  if (!data.ok) {
+    if (data.error && /expired|session/i.test(data.error)) {
+      location.href = "/mieteru/login";
+      return;
+    }
+    document.getElementById("pages-list").innerHTML =
+      '<div class="error-banner">' + (data.error || "ページを取得できませんでした。") + '</div>';
+    return;
+  }
+  if (data.email) {
+    document.getElementById("email-line").textContent = preview
+      ? "表示確認: " + data.email
+      : "ログイン中: " + data.email;
+  }
+  const pages = data.pages || [];
+  const first = pages[0];
+  let trialHref = "";
+  if (preview) {
+    trialHref = "/mieteru/edit?grow_preview=1&focus=grow#grow";
+  } else if (first && token) {
+    trialHref = "/mieteru/edit?t=" + encodeURIComponent(token) +
+      "&c=" + encodeURIComponent(first.client_id) + "&focus=grow#grow";
+  }
+  const trial = document.getElementById("trial-banner");
+  if (trial && window.MieteruGrow) {
+    trial.innerHTML = window.MieteruGrow.renderTrialBanner(data, { href: trialHref });
+  }
+  const list = document.getElementById("pages-list");
+  if (pages.length === 0) {
+    list.innerHTML = '<div class="card empty">まだページがありません。下の「新しい店舗ページを追加」から作成してください。</div>';
+    return;
+  }
+  list.innerHTML = pages.map(function (p) {
+    const liveBadge = p.is_public
+      ? '<span class="badge live">公開中</span>'
+      : '<span class="badge draft">未公開</span>';
+    const urlBlock = p.public_url
+      ? '<div class="page-meta"><a href="' + p.public_url + '" target="_blank" rel="noopener">' + p.public_url + '</a></div>'
+      : '<div class="page-meta" style="color:var(--muted)">— 未公開 —</div>';
+    const visitBtn = p.public_url
+      ? '<a class="btn btn-primary" href="' + p.public_url + '" target="_blank" rel="noopener">🔗 開く</a>'
+      : '';
+    const editHref = preview
+      ? "/mieteru/edit?grow_preview=1"
+      : "/mieteru/edit?t=" + encodeURIComponent(token) + "&c=" + encodeURIComponent(p.client_id);
+    const growHref = preview
+      ? "/mieteru/edit?grow_preview=1&focus=grow#grow"
+      : editHref + "&focus=grow#grow";
+    const editBtn = '<a class="btn" href="' + editHref + '">✏ 編集</a>';
+    const meta = [p.industry, p.location].filter(Boolean).join(" · ");
+    const growHtml = window.MieteruGrow
+      ? window.MieteruGrow.renderDashboardCard(p, { href: growHref })
+      : "";
+    return (
+      '<div class="card">' +
+        '<div class="page-row">' +
+          '<div style="min-width:0;flex:1">' +
+            '<div class="page-name">' + (p.name || "(無題)") + liveBadge + "</div>" +
+            (meta ? '<div class="page-meta">' + meta + "</div>" : "") +
+            urlBlock +
+          "</div>" +
+          '<div class="actions">' + visitBtn + editBtn + "</div>" +
+        "</div>" +
+        growHtml +
+      "</div>"
+    );
+  }).join("");
+}
+
 (function () {
   const params = new URLSearchParams(location.search);
   const token = params.get("t") || "";
+  if (params.get("grow_preview") === "1" && !token) {
+    document.getElementById("preview-note").style.display = "block";
+    document.getElementById("add-page-btn").href = "/mieteru/demo";
+    const end = new Date(Date.now() + 5 * 86400000).toISOString();
+    renderAccount({
+      ok: true,
+      email: "preview@example.com",
+      trial_ends_at: end,
+      pages: [{
+        client_id: "preview",
+        name: "横浜みなと歯科",
+        industry: "歯科・医院",
+        location: "横浜市中区",
+        is_public: true,
+        public_url: "https://seoai.space/p/preview",
+        summary: "横浜市中区でインプラントと予防歯科を行うクリニックです。",
+        phone: "045-000-0000",
+        hours: "月-金 9:00-18:00",
+        keywords: "横浜, 歯科, インプラント",
+        domain: "https://example.com",
+      }],
+    }, "", true);
+    return;
+  }
   if (!token) { location.href = "/mieteru/login"; return; }
 
   document.getElementById("add-page-btn").href = "/mieteru/demo?addmode=1&t=" + encodeURIComponent(token);
@@ -76,52 +174,7 @@ h1 { font-size:22px; font-weight:800; margin:6px 0 4px; }
     body: JSON.stringify({ token: token }),
   })
     .then(function (r) { return r.json(); })
-    .then(function (data) {
-      document.getElementById("loading").style.display = "none";
-      if (!data.ok) {
-        if (data.error && /expired|session/i.test(data.error)) {
-          location.href = "/mieteru/login";
-          return;
-        }
-        document.getElementById("pages-list").innerHTML =
-          '<div class="error-banner">' + (data.error || "ページを取得できませんでした。") + '</div>';
-        return;
-      }
-      if (data.email) {
-        document.getElementById("email-line").textContent = "ログイン中: " + data.email;
-      }
-      const list = document.getElementById("pages-list");
-      if (!data.pages || data.pages.length === 0) {
-        list.innerHTML = '<div class="card empty">まだページがありません。下の「新しい店舗ページを追加」から作成してください。</div>';
-        return;
-      }
-      list.innerHTML = data.pages.map(function (p) {
-        const liveBadge = p.is_public
-          ? '<span class="badge live">公開中</span>'
-          : '<span class="badge draft">未公開</span>';
-        const urlBlock = p.public_url
-          ? '<div class="page-meta"><a href="' + p.public_url + '" target="_blank" rel="noopener">' + p.public_url + '</a></div>'
-          : '<div class="page-meta" style="color:var(--muted)">— 未公開 —</div>';
-        const visitBtn = p.public_url
-          ? '<a class="btn btn-primary" href="' + p.public_url + '" target="_blank" rel="noopener">🔗 開く</a>'
-          : '';
-        const editBtn = '<a class="btn" href="/mieteru/edit?t=' + encodeURIComponent(token) +
-          '&c=' + encodeURIComponent(p.client_id) + '">✏ 編集</a>';
-        const meta = [p.industry, p.location].filter(Boolean).join(' · ');
-        return (
-          '<div class="card">' +
-            '<div class="page-row">' +
-              '<div style="min-width:0;flex:1">' +
-                '<div class="page-name">' + (p.name || '(無題)') + liveBadge + '</div>' +
-                (meta ? '<div class="page-meta">' + meta + '</div>' : '') +
-                urlBlock +
-              '</div>' +
-              '<div class="actions">' + visitBtn + editBtn + '</div>' +
-            '</div>' +
-          '</div>'
-        );
-      }).join('');
-    })
+    .then(function (data) { renderAccount(data, token, false); })
     .catch(function () {
       document.getElementById("loading").style.display = "none";
       document.getElementById("pages-list").innerHTML =
