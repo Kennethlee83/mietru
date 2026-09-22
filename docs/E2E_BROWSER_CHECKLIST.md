@@ -1,137 +1,139 @@
 # Grow AI Card — browser QA checklist
 
-Step-by-step check of the post-create flow. Record the origin you actually opened at the top of the run. Do not treat a green landing page as proof that grow fields shipped.
+Step-by-step check of the post-create flow on production.
 
-Scoring rules: `docs/SCORING.md`. Email wording and query params: `docs/GROW_EMAIL_COPY_JA_EN.md`.
+Scoring: `docs/SCORING.md`. Email copy and `?grow=1`: `docs/GROW_EMAIL_COPY_JA_EN.md`.
 
 ## Host
 
-This repo documents the app at **`https://seoai.space/mieteru`**. Public cards are **`https://seoai.space/p/<slug>/`**.
+| | |
+|--|--|
+| Live origin | **`https://mieteru.seoai.space`** |
+| Droplet | `167.172.90.109` |
+| Mailer | `saas/missing_fields_mailer.py` |
+| Cron | **11:20 JST** |
+| Grow-nudge cooldown | **7 days** |
+
+Browser steps use the hostname. Do not point the checklist at the raw droplet IP.
+
+`/demo` redirects to `/signup`. `/mieteru` and `/mieteru/edit` redirect to `/` and `/edit`.
 
 | Step | URL |
 |------|-----|
-| Landing (do not regress) | `https://seoai.space/mieteru` |
-| Create | `https://seoai.space/mieteru/demo` |
-| Login | `https://seoai.space/mieteru/login` |
-| Publish handoff | `https://seoai.space/mieteru/me?t={token}` |
-| Dashboard | `https://seoai.space/mieteru/account?t={token}` |
-| Edit | `https://seoai.space/mieteru/edit?t={token}&c={client_id}` |
+| Landing (do not regress) | `https://mieteru.seoai.space/` |
+| Create | `https://mieteru.seoai.space/signup` |
+| Login | `https://mieteru.seoai.space/login` |
+| Publish handoff | `https://mieteru.seoai.space/me?t={token}` |
+| Dashboard | `https://mieteru.seoai.space/account?t={token}` |
+| Edit | `https://mieteru.seoai.space/edit?t={token}&c={client_id}` |
 
-If QA is assigned to `https://mieteru.seoai.space`, use the same paths on that origin (`/`, `/demo`, `/login`, `/me`, `/account`, `/edit`) and write the origin in the run log. Paths and query params do not change.
+`/api/mieteru/*` and `/api/score` are the live backend on this host. A local static preview will fail those calls.
 
-`/api/mieteru/*` and `/api/score` are the live SEOAI backend. This repository is static HTML. A local `npx serve` preview will fail those calls; run this checklist on the deployed host.
-
-Use a new email address per run. Trial text on `/mieteru/me` is: first month free, ¥2,980 from month two.
+Use a new email address per run. Trial copy on `/me`: first month free, ¥2,980 from month two.
 
 ## 0. Landing stays put
 
 The 24 Sep landing freeze still applies. This pass is post-create only.
 
-- [ ] Open `https://seoai.space/mieteru`.
-- [ ] The page is the existing marketing page (hero, ミエテル度 demo, pricing). It does not show grow inputs (マップ, SNS, ロゴ, FAQ) or a completeness widget.
+- [ ] Open `https://mieteru.seoai.space/`.
+- [ ] The page is the existing marketing page. It does not show the grow editor or a completeness widget.
 
 ## 1. Create
 
-- [ ] Open `https://seoai.space/mieteru/demo`.
-- [ ] Step 1: enter a real business URL (example `https://example.com` only if you accept an empty autofill). Click **AIに情報を読み取ってもらう**.
-- [ ] Wait for step 2. Diagnosis line may show ミエテル度 `n/100`. That number is **not** the completeness percent.
-- [ ] Fill core fields and leave nothing blank:
-  - ビジネス名
-  - 業種
-  - 所在地
-  - サービス・商品の概要
-  - 電話番号 (10+ digits, e.g. `03-1234-5678`)
-  - 営業時間
-  - キーワード (at least one token)
-- [ ] Confirm the create form has **no** Google Maps, SNS / sameAs, logo, or FAQ fields.
-- [ ] Continue to account creation. Email plus password (8+ characters). Submit **ミエテルページを作成する**.
-- [ ] You land on a logged-in next step (`data.next_url`, usually `/mieteru/me` or account). If signup returns 404, the static page falls back to `https://mini.seoai.space/?signup=1&source=mieteru&email=…`. That fallback is the pre-MVP path; do not score grow behavior there. Note it and retry when `/api/mieteru/signup` is deployed.
+- [ ] Open `https://mieteru.seoai.space/signup` (or `/demo`, which redirects there).
+- [ ] Step 1: enter a business URL. Start the autofill.
+- [ ] Step 2 may show ミエテル度 `n/100`. That number is **not** completeness. Completeness is `(8 - missing) / 8`.
+- [ ] Fill the create fields you can: business name, industry, location, description, phone, hours, keywords. Create stays short. Do not expect Google Maps, street address, social links, logo, or FAQ on this step.
+- [ ] Confirm those five critical slots are absent from the create form: `google_maps_url` / `gbp_place_id`, `street_address`, `social_links`, `logo_url`, `faq_json`.
+- [ ] Step 3: email and password (8+ characters). Submit **ミエテルページを作成する**.
+- [ ] You land on a logged-in next step. If signup returns 404, the page falls back to `https://mini.seoai.space/?signup=1&source=mieteru&email=…`. That fallback is out of scope for grow QA.
 
 ## 2. Publish
 
-- [ ] On `/mieteru/me?t=…`, the card still shows diagnosis ミエテル度 (`AI` / `Web`), not the grow completeness widget.
-- [ ] Start card registration (**クレジットカードを登録して公開する**) or, after `?paid=1`, click **ページを公開する**.
-- [ ] Success shows a public URL on `seoai.space/p/<slug>/`. Open it. The page loads.
-- [ ] Copy `t` (token) from the page URL. You need `c` (`client_id`) from the dashboard edit link in the next step.
+- [ ] On `/me?t=…`, the card still shows diagnosis ミエテル度 (`AI` / `Web`), not the 8-slot completeness percent.
+- [ ] Register a card or, after `?paid=1`, click **ページを公開する**.
+- [ ] Success shows a public URL. Open it and confirm it loads.
+- [ ] Keep `t` from the page URL. Take `c` (`client_id`) from the dashboard edit link.
 
-Publish, trial checkout, and unpublish must still work. Completeness work must not block them.
+Publish, trial checkout, and unpublish must still work.
 
 ## 3. Completeness widget
 
-- [ ] Open `https://seoai.space/mieteru/account?t={token}`.
-- [ ] The new page row (or a card on that page) shows completeness **60%** when every core field from step 1 is saved and grow fields are empty. `domain` may be filled from the step-1 URL (`source_url`) even though create has no domain input.
-- [ ] If the percent is not 60, compare saved fields with `docs/SCORING.md` before filing a bug. A short phone number or blank hours drops the score by that field’s weight.
-- [ ] The widget copy is soft. At 60% it includes the idea of adding マップ・SNS・ロゴ・よくある質問. It does not say 未入力, 不足, or missing.
-- [ ] Up to three prompts, grow fields first.
-- [ ] Open **編集**. The edit URL contains `t` and `c`.
+- [ ] Open `https://mieteru.seoai.space/account?t={token}`.
+- [ ] Read the percent. It must equal `(8 - missing) / 8 * 100`, where `missing` is how many of these slots are empty:
+
+  1. `domain`
+  2. `google_maps_url` / `gbp_place_id` (one slot)
+  3. `street_address`
+  4. `phone`
+  5. `opening_hours`
+  6. `social_links`
+  7. `logo_url`
+  8. `faq_json`
+
+- [ ] A city-only 所在地 does not by itself fill `street_address`. Create-form `hours` fills `opening_hours` only when that slot drops out of `missing_critical_fields()`.
+- [ ] Worked check: domain + phone + opening hours present, other five missing → **37.5%**. All eight missing → **0%**. All eight present → **100%**.
+- [ ] The widget lists missing slots in that order. Copy is grow tone (足す / 育てる). It does not say 未入力, 不足, or missing.
+- [ ] Open **編集**. The link is `/edit?t={token}&c={client_id}`.
 
 ## 4. Edit grow fields
 
-- [ ] `/mieteru/edit?t={token}&c={client_id}` still loads the existing core fields (name, industry, location, summary, phone, hours, keywords, domain).
-- [ ] Below them, `#grow-fields` shows:
-  - Googleマップ URL and/or GBP place id (`google_maps`)
-  - SNS / sameAs (`same_as`)
-  - ロゴ URL (`logo`)
-  - よくある質問 (`faqs`)
-- [ ] Empty grow fields use the soft cyan highlight (`grow-empty`), not red error styling.
-- [ ] Helper text is 「ここを足すと、AIに見つけてもらいやすくなります」 or the same meaning. No 不足 label.
-- [ ] Save with grow fields still empty (**保存して公開を更新**). Save succeeds. Completeness stays 60% if core is complete.
-- [ ] Add only a Google Maps URL. Save. Completeness becomes **72%**. GBP place id alone, or both together, is also 72%, not 84%.
-- [ ] Add one social URL. Save. **+10** (82% if you only added Maps before).
-- [ ] Add a logo URL. Save. **+8**.
-- [ ] Add one FAQ with both question and answer. Save. **+10**. A question with an empty answer does not add points.
-- [ ] With all four grow fields filled and core still complete, the widget reads **100%** and the empty highlights are gone.
-- [ ] **公開を停止する** still confirms and unpublishes. **保存して公開を更新** publishes again. Core save payload is unchanged for the original fields.
+- [ ] `/edit?t={token}&c={client_id}` still loads the existing core fields.
+- [ ] The grow section can edit every critical slot that create does not finish: map URL and/or GBP place id, street address, social links, logo URL, FAQ JSON, plus domain, phone, and opening hours if they are still empty.
+- [ ] Empty critical slots use the soft cyan highlight (`grow-empty`), not red.
+- [ ] Helper text means 「ここを足すと、AIに見つけてもらいやすくなります」. No 不足 label.
+- [ ] Save with some critical slots still empty. Save succeeds. The percent stays on a 12.5-point step.
+- [ ] Add only a Google Maps URL. Save. That slot clears. `gbp_place_id` alone does the same. Setting both does **not** add a second 12.5.
+- [ ] Add `street_address`, then `social_links`, then `logo_url`, then `faq_json`, saving after each. Each newly filled slot adds **12.5** points.
+- [ ] With all 8 slots present, the widget reads **100%** and the empty highlights are gone.
+- [ ] **公開を停止する** still unpublishes. **保存して公開を更新** publishes again.
 
 ## 5. Email deep-link params
 
-You can paste the URL without waiting for mail.
+Paste these without waiting for mail.
 
 - [ ] Open  
-  `https://seoai.space/mieteru/edit?t={token}&c={client_id}&focus=grow`  
-  The page scrolls to `#grow-fields`. Empty grow fields are highlighted. Core fields are still editable.
-- [ ] Open the same URL with `&field=google_maps`. The Maps control is in view and receives the one-shot `grow-focus` cue.
-- [ ] Repeat for `field=same_as`, `field=logo`, `field=faqs`.
-- [ ] `&field=not_a_field` does not error. The edit form still loads. Unknown `field` is ignored.
-- [ ] Dropping `t` or `c` still redirects to `/mieteru/login` (existing guard).
-- [ ] When a real grow-nudge message arrives, the button text is **ページを更新する** and the href matches the deep link (English button: **Update page**). Body matches template A in `GROW_EMAIL_COPY_JA_EN.md`. It does not say 不足 or missing info.
-- [ ] A published page at 100% does not receive template A. An unpublished page does not receive template A.
+  `https://mieteru.seoai.space/edit?t={token}&c={client_id}&grow=1`  
+  The grow section is in view. Empty critical slots are highlighted. Existing fields are still editable.
+- [ ] Open  
+  `https://mieteru.seoai.space/account?t={token}&grow=1`  
+  The dashboard grow section (percent and prompts) is in view, and the way forward is the edit grow section.
+- [ ] There is no `focus=grow` and no `field=` param. `grow=1` is the flag.
+- [ ] Dropping `t` or `c` on `/edit` still redirects to `/login`.
+- [ ] When a grow nudge arrives, the button is **ページを更新する** (EN: **Update page**) and the href is the edit URL with `grow=1`.
+- [ ] Body matches template A in `GROW_EMAIL_COPY_JA_EN.md`. It does not say 不足 or missing info, even though the sender file is `saas/missing_fields_mailer.py`.
+- [ ] `{next_prompts}` lists only missing critical slots, in `CRITICAL_FIELDS` order. The percent matches `(8 - missing) / 8`.
+- [ ] A page at 100% does not receive template A. A second template A does not arrive inside the **7-day** cooldown.
 
 ## 6. Trial reminder trigger notes
 
-There is no “send trial email” button in this UI. The reminder is a backend job. Check the template and the schedule rules; do not expect the browser to fire mail by itself.
+There is no “send trial email” button. The sender is the same production mailer.
 
-Product facts already on the page:
-
-- Trial length is one month (free now, billing from month two).
-- Price after the trial is ¥2,980 / month.
-- Cancelling during the trial does not charge.
-
-Trigger (Asia/Tokyo):
-
-- [ ] Confirm the job selects subscriptions whose trial end date is 7 days after today.
-- [ ] Each subscription receives template B **once**.
-- [ ] A late job may send when 6 or 7 days remain. It must not send a second copy.
-- [ ] No send when days left are 8 or more, when the trial has ended, or when the subscription is cancelled.
-- [ ] Subject is `{business_name}の無料期間は、あと7日です` (EN: `About 7 days left on {business_name}'s free trial`).
+- [ ] Crontab on droplet `167.172.90.109` runs `saas/missing_fields_mailer.py` at **11:20 JST**.
+- [ ] Template B is eligible when `days_left <= 7` (7 down through 1), `Asia/Tokyo`.
+- [ ] No template B when `days_left` is 8 or more, when the trial has ended, or when the subscription is cancelled.
+- [ ] Cooldown is 7 days, so the last week does not produce a mail every morning.
+- [ ] Subject uses the actual `{days_left}` (JA: `{business_name}の無料期間は、あと{days_left}日です`).
 - [ ] The only button is **ページを更新する** / **Update page**, pointing at  
-  `/mieteru/edit?t={token}&c={client_id}&focus=grow`.
-- [ ] If grow fields are still empty, the body includes the soft prompt lines and the current percent (60% in the fixture). It does not use missing-info wording.
-- [ ] If completeness is already 100%, the mail still reminds about the trial date and price, and it omits the grow prompt list.
+  `https://mieteru.seoai.space/edit?t={token}&c={client_id}&grow=1`.
+- [ ] If critical slots are missing, the body includes those prompt lines and the 12.5-step percent. If completeness is 100%, the trial mail omits the prompt list.
 
-To verify without waiting a month, use a test subscription whose `trial_end` is set to today+7 in Asia/Tokyo, run the job once, and check the mailbox. Run it again and confirm there is no duplicate.
+To verify without waiting a month, set a test subscription’s trial end so `days_left` is 7 or less, let the 11:20 JST job run (or invoke `saas/missing_fields_mailer.py` once the way production does), and read the mailbox. Run it again the same day and confirm the cooldown holds.
 
 ## Run log
 
 | Field | Value |
 |-------|--------|
 | Date | |
-| Origin | `https://seoai.space` or `https://mieteru.seoai.space` |
+| Origin | `https://mieteru.seoai.space` |
+| Droplet | `167.172.90.109` |
 | Account email | |
 | `client_id` | |
 | Public URL | |
-| Completeness after publish | expected 60 |
-| Completeness after all grow fields | expected 100 |
-| Deep link opened | |
-| Trial job fixture end date | |
+| Missing slots after publish | |
+| Completeness after publish | `(8 - missing) / 8` |
+| Completeness after all 8 slots | 100% |
+| Deep link opened | `…/edit?…&grow=1` |
+| `days_left` fixture | ≤ 7 |
+| Mailer run (11:20 JST or manual) | |
 | Notes | |

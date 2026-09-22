@@ -1,8 +1,10 @@
 # Grow AI Card — email copy (Japanese + English)
 
-Canonical templates for the two post-create emails. Japanese is what users receive. English is the parallel copy for the same template keys.
+User-facing copy for the production mailer `saas/missing_fields_mailer.py` on droplet `167.172.90.109`. Japanese is what users receive. English is the parallel copy for the same template keys.
 
-These replace the old **missing-info** email. The new tone is grow: the page is already useful, and the owner can add a few things so AI assistants introduce the business more clearly.
+The module name stays `missing_fields_mailer.py`. The message tone is grow. These templates replace the old missing-info wording.
+
+Live links use `https://mieteru.seoai.space`.
 
 If `docs/GROW_AI_CARD_CANVAS.md` exists, link here instead of pasting a second copy of the bodies.
 
@@ -22,71 +24,71 @@ One button only. Label it exactly:
 - Japanese: **ページを更新する**
 - English: **Update page**
 
-The button URL is the edit deep link in the next section. Do not send the reader to the landing page or to a generic dashboard with no grow section.
+## When mail goes out
+
+| Job | Rule |
+|-----|------|
+| Module | `saas/missing_fields_mailer.py` |
+| Host | droplet `167.172.90.109` |
+| Cron | **11:20 JST** daily |
+| Grow nudge (template A) | `missing_critical_fields()` is non-empty, so completeness is under 100% (`docs/SCORING.md`) |
+| Cooldown | **7 days** between grow nudges for the same page |
+| Trial nudge (template B) | `days_left <= 7` and the trial has not ended |
+
+Do not send template A at 100% (no missing critical slots). Do not send template B when `days_left` is greater than 7. The 7-day cooldown stops a second grow nudge inside the week. The trial nudge is due for the whole window `days_left <= 7`, not only on the day that equals 7.
 
 ## Variables
 
 | Variable | Meaning |
 |----------|---------|
-| `{owner_name}` | Account display name. If empty, drop the name and the following さん (JA) or use "Hi," (EN). |
+| `{owner_name}` | Account display name. If empty, drop the name and さん (JA) or use "Hi," (EN). |
 | `{business_name}` | Profile `name`. If empty, use 「あなたのページ」 / "your page". |
-| `{completeness}` | Integer from `docs/SCORING.md`. |
-| `{next_prompts}` | Up to three empty-field lines, grow keys first, same order as the widget. Omit the block when there are no empty grow fields. |
-| `{edit_url}` | Deep link below. |
-| `{days_left}` | Whole days until trial end in `Asia/Tokyo`. The trial-ending template is sent at **7**. |
-| `{trial_end_date}` | Trial end date, format `YYYY年M月D日` (JA) or `D MMM YYYY` (EN), `Asia/Tokyo`. |
+| `{completeness}` | `(8 - missing) / 8 * 100` from `missing_critical_fields()`. |
+| `{next_prompts}` | One line per missing critical slot, in `CRITICAL_FIELDS` order. Omit when nothing is missing. |
+| `{edit_url}` | Edit deep link below. |
+| `{days_left}` | Whole days until trial end in `Asia/Tokyo`. Template B sends while this is **≤ 7**. |
+| `{trial_end_date}` | `YYYY年M月D日` (JA) or `D MMM YYYY` (EN), `Asia/Tokyo`. |
 
-Prompt lines (use only the empty ones):
+Prompt lines, only for slots `missing_critical_fields()` returns:
 
-| Key | Japanese line | English line |
-|-----|---------------|--------------|
-| `google_maps` | 地図（Googleマップ）を足す | Add a Google Maps link |
-| `same_as` | SNSのリンクを1つ足す | Add one social link |
-| `logo` | ロゴを足す | Add a logo |
-| `faqs` | よくある質問を1つ足す | Add one FAQ |
+| Slot | Japanese line | English line |
+|------|---------------|--------------|
+| `domain` | 公式サイトのURLを足す | Add your website URL |
+| `google_maps_url` / `gbp_place_id` | Googleマップ（またはビジネスプロフィール）を足す | Add a Google Maps link or Business Profile |
+| `street_address` | 番地までの住所を足す | Add the street address |
+| `phone` | 電話番号を足す | Add a phone number |
+| `opening_hours` | 営業時間を足す | Add opening hours |
+| `social_links` | SNSのリンクを足す | Add a social link |
+| `logo_url` | ロゴを足す | Add a logo |
+| `faq_json` | よくある質問を足す | Add an FAQ |
 
 ## Deep link
 
-Existing edit route, plus grow focus:
+The button opens the Mieteru edit grow section:
 
 ```
-https://seoai.space/mieteru/edit?t={token}&c={client_id}&focus=grow
+https://mieteru.seoai.space/edit?t={token}&c={client_id}&grow=1
 ```
 
-Optional single-field focus (highlight rules in `docs/SCORING.md`):
+`t` is the session token. `c` is `client_id`. `grow=1` scrolls to the grow section and highlights empty critical slots.
+
+Account accepts the same flag when the mailer has no `client_id`:
 
 ```
-&field=google_maps
-&field=same_as
-&field=logo
-&field=faqs
+https://mieteru.seoai.space/account?t={token}&grow=1
 ```
 
-When `{next_prompts}` has exactly one grow line, append that field. When it has several, use `focus=grow` only.
-
-`t` is the session token. `c` is `client_id`. Both are required by `/mieteru/edit` today.
-
-Host note: this repo serves the app at `https://seoai.space/mieteru`. If a message is sent for a host that mounts the same pages at the origin root (`https://mieteru.seoai.space`), swap the origin and keep the path and query (`/edit?t=…&c=…&focus=grow`).
+Prefer the edit URL. Do not use `focus=grow` or `field=`. Do not link to `seoai.space/mieteru` or the landing page.
 
 ## Template A — grow nudge
 
-Replaces the missing-info mail.
-
-**When to send**
-
-- The page is published (`is_public`).
-- `completeness` < 100 and at least one grow field is empty.
-- Not more than once per page per 7 days.
-- Do not send for unpublished or draft pages.
-- Do not send at 100%.
-
-This frontend repo has no mailer or cron. The production backend owns delivery. The copy and the trigger rules are still these.
+Replaces the missing-info mail. Sent by the 11:20 JST cron, then not again for 7 days.
 
 ### Japanese
 
 **Subject:** `{business_name}のページ、もう少し育てられます`
 
-**Preheader:** 地図・SNS・ロゴ・質問を足すと、AIに紹介されやすくなります。
+**Preheader:** 地図・住所・SNS・ロゴを足すと、AIに紹介されやすくなります。
 
 **Body:**
 
@@ -96,7 +98,7 @@ This frontend repo has no mailer or cron. The production backend owns delivery. 
 {business_name}のAIミエテルページは、もう公開されています。
 今の完成度は {completeness}% です。
 
-地図、SNS、ロゴ、よくある質問を足すと、ChatGPT や Gemini がお店を紹介しやすくなります。
+足すと、ChatGPT や Gemini がお店を紹介しやすくなります。
 直す作業ではありません。見える範囲を広げるステップです。
 
 まずは1つだけで大丈夫です。
@@ -114,7 +116,7 @@ AIミエテル / SEOAI
 
 **Subject:** `You can grow {business_name}'s page a little more`
 
-**Preheader:** A map, a social link, a logo, or an FAQ helps AI introduce you.
+**Preheader:** A map, address, social link, or logo helps AI introduce you.
 
 **Body:**
 
@@ -124,7 +126,7 @@ Hi {owner_name},
 {business_name}'s AI Mieteru page is already live.
 Completeness is {completeness}%.
 
-A map, a social link, a logo, and a short FAQ help ChatGPT and Gemini introduce the business.
+Adding the items below helps ChatGPT and Gemini introduce the business.
 This is a way to grow what people can see. It is not a list of mistakes.
 
 One addition is enough to start.
@@ -138,9 +140,9 @@ AI Mieteru / SEOAI
 
 **Button label:** Update page
 
-### Example at 60%
+### Example at 62.5% (3 missing)
 
-Core fields filled, grow fields empty. `{next_prompts}` is the four lines, but the widget and this email show the first three. The fourth (FAQ) is still highlighted on the edit page via `focus=grow`.
+Present: `domain`, `google_maps_url`, `phone`, `opening_hours`, `social_links`. Missing: `street_address`, `logo_url`, `faq_json`. `(8 - 3) / 8 = 62.5%`.
 
 **Subject:** `青山カフェのページ、もう少し育てられます`
 
@@ -148,35 +150,31 @@ Core fields filled, grow fields empty. `{next_prompts}` is the four lines, but t
 佐藤さん
 
 青山カフェのAIミエテルページは、もう公開されています。
-今の完成度は 60% です。
+今の完成度は 62.5% です。
 
-地図、SNS、ロゴ、よくある質問を足すと、ChatGPT や Gemini がお店を紹介しやすくなります。
+足すと、ChatGPT や Gemini がお店を紹介しやすくなります。
 直す作業ではありません。見える範囲を広げるステップです。
 
 まずは1つだけで大丈夫です。
-・地図（Googleマップ）を足す
-・SNSのリンクを1つ足す
+・番地までの住所を足す
 ・ロゴを足す
+・よくある質問を足す
 
 ページを更新する
-https://seoai.space/mieteru/edit?t=TOKEN&c=CLIENT&focus=grow
+https://mieteru.seoai.space/edit?t=TOKEN&c=CLIENT&grow=1
 ```
 
-## Template B — trial ending soon (~7 days left)
+## Template B — trial ending soon (`days_left <= 7`)
 
-Soft reminder. Same button, same edit deep link. Billing facts match `/mieteru/me`: the first month is free, month two is ¥2,980, and cancelling during the trial does not charge.
+Same button and the same edit deep link. Billing facts on `/me`: the first month is free, month two is ¥2,980, and cancelling during the trial does not charge.
 
-**When to send**
+Send while `days_left` is 7, 6, 5, 4, 3, 2, or 1. Do not send after the trial has ended, when the subscription is cancelled, or when `days_left` is 8 or more. The 7-day cooldown means this reminder is not repeated every morning of that week.
 
-- Once per subscription.
-- On the `Asia/Tokyo` calendar date that is **7 days before** the trial end date (`{days_left}` = 7).
-- If that day's job runs late, send while `{days_left}` is 6 or 7, and do not send a second time.
-- Do not send when the trial has already ended, when the subscription is cancelled, or when `{days_left}` is greater than 7.
-- Unpublished pages still get this reminder if the trial is active. The button still opens edit. Grow prompts appear only when grow fields are empty; if completeness is 100%, omit `{next_prompts}` and the sentence that lists map / SNS / logo / FAQ.
+If critical slots are still missing, keep `{next_prompts}`. If completeness is 100%, omit `{next_prompts}` and the sentence that asks the reader to add them.
 
 ### Japanese
 
-**Subject:** `{business_name}の無料期間は、あと7日です`
+**Subject:** `{business_name}の無料期間は、あと{days_left}日です`
 
 **Preheader:** ページはそのまま公開されています。終了日は {trial_end_date} です。
 
@@ -188,7 +186,7 @@ Soft reminder. Same button, same edit deep link. Billing facts match `/mieteru/m
 {business_name}の無料期間は、あと{days_left}日です（{trial_end_date}まで）。
 ページはいまも公開されています。
 
-終わる前に、地図やSNS、ロゴ、よくある質問を足しておくと、AIからの紹介が続きやすくなります。
+終わる前に、地図や住所、SNS、ロゴ、よくある質問を足しておくと、AIからの紹介が続きやすくなります。
 今の完成度は {completeness}% です。
 
 {next_prompts}
@@ -206,7 +204,7 @@ AIミエテル / SEOAI
 
 ### English
 
-**Subject:** `About 7 days left on {business_name}'s free trial`
+**Subject:** `{days_left} days left on {business_name}'s free trial`
 
 **Preheader:** The page stays published. The trial ends on {trial_end_date}.
 
@@ -218,7 +216,7 @@ Hi {owner_name},
 {business_name}'s free trial has {days_left} days left (through {trial_end_date}).
 The page is still published.
 
-Adding a map, a social link, a logo, or an FAQ before it ends helps AI assistants keep introducing the business.
+Adding a map, a street address, a social link, a logo, or an FAQ before it ends helps AI assistants keep introducing the business.
 Completeness is {completeness}%.
 
 {next_prompts}
@@ -234,7 +232,7 @@ AI Mieteru / SEOAI
 
 **Button label:** Update page
 
-### Example (~7 days, 60%)
+### Example (`days_left` = 7, completeness 62.5%)
 
 **Subject:** `青山カフェの無料期間は、あと7日です`
 
@@ -244,22 +242,22 @@ AI Mieteru / SEOAI
 青山カフェの無料期間は、あと7日です（2026年10月22日まで）。
 ページはいまも公開されています。
 
-終わる前に、地図やSNS、ロゴ、よくある質問を足しておくと、AIからの紹介が続きやすくなります。
-今の完成度は 60% です。
+終わる前に、地図や住所、SNS、ロゴ、よくある質問を足しておくと、AIからの紹介が続きやすくなります。
+今の完成度は 62.5% です。
 
-・地図（Googleマップ）を足す
-・SNSのリンクを1つ足す
+・番地までの住所を足す
 ・ロゴを足す
+・よくある質問を足す
 
 続ける場合は、2ヶ月目から月額 ¥2,980 です。
 トライアル中に解約すれば、料金はかかりません。
 
 ページを更新する
-https://seoai.space/mieteru/edit?t=TOKEN&c=CLIENT&focus=grow
+https://mieteru.seoai.space/edit?t=TOKEN&c=CLIENT&grow=1
 ```
 
 ## Plain-text and HTML
 
 Send both. The HTML button text is the label above. The plain-text version keeps the same sentences and puts the label on its own line directly above `{edit_url}`.
 
-Do not add a second button for billing, unsubscribe-as-the-primary-action, or “fix missing information”.
+Do not add a second button for billing or for “fix missing information”.

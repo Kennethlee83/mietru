@@ -1,98 +1,81 @@
 # Grow AI Card — page completeness scoring
 
-Source of truth for the post-create **completeness percent** on the account dashboard and the edit page.
+Production ground truth for the completeness percent on `https://mieteru.seoai.space` (droplet `167.172.90.109`).
 
-This is not the marketing **ミエテル度** from `POST /api/score` (`ai_score` / `web_score`, shown on `/mieteru` and `/mieteru/me`). That diagnosis score stays as it is. Completeness measures how much of the published business-card profile is filled.
+The percent mirrors `missing_critical_fields()`. It is not the marketing ミエテル度 from `POST /api/score` (`ai_score` / `web_score`).
 
 If `docs/GROW_AI_CARD_CANVAS.md` exists, link here instead of copying this table.
 
 ## Formula
 
 ```
-completeness_percent = sum of weights of fields that count as filled
+missing = len(missing_critical_fields())
+completeness = (8 - missing) / 8
 ```
 
-Weights are integers and sum to **100**. Display the integer as-is (`60%`, not `60.0%`). There is no rounding step.
+Show `completeness * 100` as the percent. The only values are:
 
-A page with every core field filled and every grow field empty scores **60**. That is the normal score right after create → publish, before the owner grows the card.
+| Missing slots | Percent |
+|---------------|---------|
+| 8 | 0% |
+| 7 | 12.5% |
+| 6 | 25% |
+| 5 | 37.5% |
+| 4 | 50% |
+| 3 | 62.5% |
+| 2 | 75% |
+| 1 | 87.5% |
+| 0 | 100% |
 
-## Field → weight
+Each slot is one eighth. Filling a slot adds 12.5 points. Two keys that share one slot never add 25.
 
-Keys are the persisted profile keys. Create-form aliases are listed so the helper can score either shape.
+## CRITICAL_FIELDS (8)
 
-### Core fields — 60 points
+Order is the order `missing_critical_fields()` uses. Weight of every slot is **1/8**.
 
-Collected on create (`/mieteru/demo`) and editable on `/mieteru/edit`. They are part of the percent. They are not the grow prompts.
+| # | Slot | Keys | Counts as present when |
+|---|------|------|------------------------|
+| 1 | domain | `domain` | `missing_critical_fields()` does not include this slot. |
+| 2 | map / GBP | `google_maps_url`, `gbp_place_id` | Either key is present. Both still count as one slot. |
+| 3 | street address | `street_address` | Slot omitted from `missing_critical_fields()`. City-only `location` from create does not fill this slot unless the backend stores it as `street_address` and the function stops reporting it. |
+| 4 | phone | `phone` | Slot omitted from `missing_critical_fields()`. |
+| 5 | opening hours | `opening_hours` | Slot omitted from `missing_critical_fields()`. Create-form `hours` fills it only when the stored profile satisfies that function. |
+| 6 | social links | `social_links` | Slot omitted from `missing_critical_fields()`. |
+| 7 | logo | `logo_url` | Slot omitted from `missing_critical_fields()`. |
+| 8 | FAQ | `faq_json` | Slot omitted from `missing_critical_fields()`. |
 
-| Score key | Weight | Create alias | Edit control | Counts as filled when |
-|-----------|--------|--------------|--------------|------------------------|
-| `name` | 10 | `business_name` | ビジネス名 | Trimmed value is non-empty. |
-| `summary` | 12 | `description` | サービス・商品の概要 | Trimmed value is non-empty. |
-| `industry` | 8 | `industry` | 業種 | Trimmed value is non-empty and is not `選択してください…` or `__other__`. |
-| `location` | 8 | `location` | 所在地 | Trimmed value is non-empty. |
-| `phone` | 6 | `phone` | 電話番号 | Digits only (strip spaces, hyphens, parentheses, `+`) has length ≥ 10. |
-| `hours` | 6 | `hours` | 営業時間 | Trimmed value is non-empty and is not `— 未設定 —`. |
-| `keywords` | 5 | `keywords` | キーワード | At least one comma-separated token is non-empty after trim. |
-| `domain` | 5 | none (see below) | 公式サイトURL | `domain` passes the URL rule, otherwise `source_url` does. |
-
-**URL rule** for `domain` / `source_url`: trimmed value contains no spaces, and either starts with `http://` or `https://`, or contains a `.`.
-
-`source_url` is the URL entered on create step 1. It fills the `domain` weight only when `domain` itself is empty. The two keys never add more than 5.
-
-Core total: 10 + 12 + 8 + 8 + 6 + 6 + 5 + 5 = **60**.
-
-### Grow fields — 40 points
-
-Shown on **edit only**, inside `#grow-fields`. Do not add these inputs to `/mieteru/demo` or to the landing page.
-
-| Score key | Weight | Profile keys | Counts as filled when |
-|-----------|--------|--------------|------------------------|
-| `google_maps` | 12 | `google_maps_url`, `gbp_place_id` | `google_maps_url` passes the URL rule, **or** `gbp_place_id` is non-empty after trim. Either one awards the full 12. Both still award 12, not 24. |
-| `same_as` | 10 | `same_as` (array of URL strings) or `sns` (string) | At least one `same_as` entry passes the URL rule, **or** `sns` passes the URL rule. One link awards the full 10. |
-| `logo` | 8 | `logo_url` | `logo_url` passes the URL rule (uploaded asset URL or remote image URL). |
-| `faqs` | 10 | `faqs` (array of `{ question, answer }`) | At least one item has both `question` and `answer` non-empty after trim. Extra FAQs do not add points. An item with only a question, or only an answer, does not count. |
-
-Grow total: 12 + 10 + 8 + 10 = **40**.
-
-Account fields (`email`, `password`) are never scored.
+`name`, `industry`, `description` / `summary`, `keywords`, and `location` are not critical slots. They do not change the percent. `email` and `password` are not scored.
 
 ## Worked examples
 
-| Profile | Percent |
-|---------|---------|
-| All 8 core fields filled, grow fields absent | **60** |
-| Only `name` + `summary` | **22** |
-| Core filled, plus a Google Maps URL only | **72** |
-| Core filled, plus Maps URL and a GBP place id | **72** (no double count) |
-| Core filled, one FAQ with question and answer | **70** |
-| Core filled, FAQ with a question and a blank answer | **60** |
-| `keywords` is `" , , "` | keywords weight **not** awarded |
-| `phone` is `"03-0000-0000"` (10 digits) | phone weight awarded |
-| `phone` is `"123"` | phone weight **not** awarded |
-| `domain` empty, `source_url` is `https://shop.example` | domain weight awarded |
-| Every row in both tables filled | **100** |
+| Present slots | Missing | Percent |
+|---------------|---------|---------|
+| none | 8 | **0%** |
+| `domain` + `phone` + `opening_hours` only | 5 | **37.5%** |
+| those three, plus map URL and `social_links` | 3 | **62.5%** |
+| map URL set and `gbp_place_id` also set | still one map slot | no extra 12.5 |
+| all 8 slots | 0 | **100%** |
 
 ## Empty-field highlight rules
 
-1. Highlight only scored fields that are empty under the rules above. Never highlight email, password, or the diagnosis ミエテル度.
-2. `null`, missing keys, `""`, whitespace-only strings, empty arrays, and placeholder sentinels (`— 未設定 —`, `選択してください…`, `__other__`) are empty.
-3. A placeholder **attribute** on an input does not count as a value.
-4. Highlight style is a soft grow cue, not an error. Use class `grow-empty`: border `rgba(20,180,230,0.7)`, background `rgba(20,180,230,0.08)`. Do not use the danger red (`#ff6b8b` / `#ef4444`).
-5. Helper copy on an empty field: 「ここを足すと、AIに見つけてもらいやすくなります」. Do not use 未入力, 不足, 情報が足りません, or “missing”.
-6. `name` and `summary` stay required to save, matching today’s edit form. Every other scored field is optional. Save and publish must succeed while grow fields are empty.
-7. The completeness widget on `/mieteru/account` and `/mieteru/edit` shows the percent plus up to **3** soft prompts. Order empty **grow** keys first (`google_maps`, `same_as`, `logo`, `faqs`), then empty core keys by weight descending (`summary`, `name`, `industry`, `location`, `phone`, `hours`, `keywords`, `domain`).
-8. At 60% with grow fields empty, the widget prompt is: 「マップ・SNS・ロゴ・よくある質問を足すと、もっと見つけてもらえます。」
-9. At 100%, hide empty highlights and show a short confirmation: 「このページは育ちきっています。」 Do not send the grow nudge email (see `GROW_EMAIL_COPY_JA_EN.md`).
-10. Recompute on load and after a successful save. A field that just became filled loses `grow-empty` without a reload of the whole app.
-11. Create (`/mieteru/demo`) does not render grow fields and does not highlight grow empties. The landing page is out of scope.
-12. Deep link `focus=grow` scrolls to `#grow-fields` and highlights empty grow fields. `field=` accepts only `google_maps`, `same_as`, `logo`, `faqs`. A known `field` scrolls that control into view and adds class `grow-focus` once. Any other `field` value is ignored. `t` and `c` stay required; without them the edit page still redirects to `/mieteru/login`, as it does today.
+1. Highlight only slots that `missing_critical_fields()` returns. Do not highlight diagnosis ミエテル度, email, or password.
+2. The map/GBP pair is one control group. Highlight it only when both `google_maps_url` and `gbp_place_id` are missing. Filling either one clears the highlight.
+3. Highlight style is a soft grow cue, not an error. Class `grow-empty`: border `rgba(20,180,230,0.7)`, background `rgba(20,180,230,0.08)`. Do not use danger red (`#ff6b8b` / `#ef4444`).
+4. Helper copy: 「ここを足すと、AIに見つけてもらいやすくなります」. Do not use 未入力, 不足, 情報が足りません, or “missing”.
+5. The widget on `/account` and `/edit` shows the percent and the missing slots in the table order above. At 100%, hide highlights and show 「このページは育ちきっています。」
+6. `name` and the summary stay required to save, as on the current edit form. Critical slots are optional. Save must succeed while some of the eight are still missing.
+7. Recompute from `missing_critical_fields()` on load and after a successful save.
+8. Create (`/signup`) stays short. Do not add the full critical set to the landing page.
+9. `?grow=1` on `/edit` and on `/account` scrolls to the grow section and highlights the missing critical slots. `t` is still required. `/edit` still requires `c` (`client_id`). Missing `t` or `c` on edit still redirects to `/login`.
 
 ## Widget placement
 
-| Surface | Shows percent | Shows grow prompts | Renders grow inputs |
-|---------|---------------|--------------------|---------------------|
-| `/mieteru` (LP) | No | No | No |
-| `/mieteru/demo` (create) | No | No | No |
-| `/mieteru/me` (publish) | Diagnosis ミエテル度 only, unchanged | No | No |
-| `/mieteru/account` | Yes | Yes, up to 3 | No (link into edit) |
-| `/mieteru/edit` | Yes | Yes, up to 3 | Yes, `#grow-fields` below the existing core fields |
+Paths are on `https://mieteru.seoai.space`.
+
+| Surface | Shows this percent | Grow section via `?grow=1` |
+|---------|--------------------|----------------------------|
+| `/` (LP) | No | No |
+| `/signup` (create) | No | No |
+| `/me` (publish) | Diagnosis ミエテル度 only | No |
+| `/account` | Yes | Yes, focuses the grow section |
+| `/edit` | Yes | Yes, focuses the grow section and the empty critical fields |
